@@ -47,12 +47,13 @@ class DomainDisentangleExperiment: # See point 2. of the project
 
     def train_iteration(self, data):
         image, obj_label, dom_label = data
-
+        # obj_label messa a None per il target.
         image = image.to(self.device)
-        obj_label = obj_label.to(self.device)
+        if obj_label != None:
+            obj_label = obj_label.to(self.device) #to be tested
         dom_label = dom_label.to(self.device)
 
-        features, obj_class, dom_class, recon_feat, adv_dom_to_obj_class, adv_obj_to_dom_class = self.model(image)
+        features, obj_class, dom_class, recon_feat, adv_dom_to_obj_class, adv_obj_to_dom_class = self.model(image, obj_label)
         celoss_obj = self.criterion(obj_class, obj_label)
         celoss_dom = self.criterion(dom_class, dom_label)
         eloss_dom_to_obj = - self.criterion(adv_dom_to_obj_class, obj_label)

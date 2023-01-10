@@ -92,16 +92,19 @@ class DomainDisentangleModel(nn.Module):
             nn.Linear(512, 512),
         )
 
-    def forward(self, x):
+    def forward(self, x, target_label):
         # x = feature, y classification result
         # c = category, d = domain
         x = self.feature_extractor(x)
         c_x = self.category_encoder(x)
         d_x = self.domain_encoder(x)
-        c_y = self.category_classifier(c_x)
+        if target_label != None: #?????
+            c_y = self.category_classifier(c_x)
+        else:
+            c_y = None
         d_y = self.domain_classifier(d_x)
         #adversarial
-        a_c_y = self.category_classifier(d_x) #valori del domain encoder nel category classifier
+        a_c_y = self.category_classifier(d_x) #valori del domain encoder nel category classifier #?????
         a_d_y = self.domain_classifier(c_x) #valori del category encoder nel domain classifier
         # convolute the concatenated c_x and d_x
         fg = self.cv(torch.cat((c_x,d_x),0))

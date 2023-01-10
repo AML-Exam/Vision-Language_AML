@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from torchvision.models import resnet18
 
@@ -82,8 +83,14 @@ class DomainDisentangleModel(nn.Module):
         self.domain_classifier = nn.Linear(512, 2)
         self.category_classifier = nn.Linear(512, 7)
 
-        self.reconstructor = nn.Conv1d(2,1,2)
-        #raise NotImplementedError('[TODO] Implement DomainDisentangleModel')
+        self.cv = nn.Conv1d(2,1,2)
+
+        self.reconstructor = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+        )
 
     def forward(self, x):
         x = self.feature_extractor(x)
@@ -91,5 +98,9 @@ class DomainDisentangleModel(nn.Module):
         d_x = self.domain_encoder(x)
         c_y = self.category_classifier(c_x)
         d_y = self.domain_classifier(d_x)
-        r_x = self.reconstructor(torch.cat((c_x,d_x),0))
-        #raise NotImplementedError('[TODO] Implement DomainDisentangleModel forward() method')
+        # convolute the concatenated c_x and d_x
+        fg = self.cv(torch.cat((c_x,d_x),0))
+        r_x = self.reconstructor(fg)
+        return x, c_y, d_y, r_x
+        # ritorniamo le feature estratte e quelle ricostruite per calcolare la reconstruction loss
+        # ritorniamo l'output dei classificatori per le altre loss function

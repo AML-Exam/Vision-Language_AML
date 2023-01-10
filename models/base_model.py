@@ -93,14 +93,20 @@ class DomainDisentangleModel(nn.Module):
         )
 
     def forward(self, x):
+        # x = feature, y classification result
+        # c = category, d = domain
         x = self.feature_extractor(x)
         c_x = self.category_encoder(x)
         d_x = self.domain_encoder(x)
         c_y = self.category_classifier(c_x)
         d_y = self.domain_classifier(d_x)
+        #adversarial
+        a_c_y = self.category_classifier(d_x) #valori del domain encoder nel category classifier
+        a_d_y = self.domain_classifier(c_x) #valori del category encoder nel domain classifier
         # convolute the concatenated c_x and d_x
         fg = self.cv(torch.cat((c_x,d_x),0))
         r_x = self.reconstructor(fg)
-        return x, c_y, d_y, r_x
-        # ritorniamo le feature estratte e quelle ricostruite per calcolare la reconstruction loss
-        # ritorniamo l'output dei classificatori per le altre loss function
+        return x, c_y, d_y, r_x, a_c_y, a_d_y
+        # ritorniamo le feature estratte e quelle ricostruite per calcolare la reconstruction loss ( x, r_x )
+        # ritorniamo l'output dei classificatori per le altre loss function ( c_y, d_y )
+        # ritorniamo l'output per l'adversarial search ( a_c_y, a_d_y )

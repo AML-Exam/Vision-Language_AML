@@ -19,7 +19,8 @@ class DomainDisentangleExperiment: # See point 2. of the project
         # forse possiamo usare il gradient descend
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
         self.criterion = torch.nn.CrossEntropyLoss()
-        self.recon_loss = torch.nn.MSELoss()
+        self.mseloss = torch.nn.MSELoss()
+        self.kldiv = torch.nn.KLDivLoss(reduction="batchmean")
 
     def save_checkpoint(self, path, iteration, best_accuracy, total_train_loss):
         checkpoint = {}
@@ -46,9 +47,15 @@ class DomainDisentangleExperiment: # See point 2. of the project
         return iteration, best_accuracy, total_train_loss
 
     def train_iteration(self, data):
-        image, obj_label, dom_label = data
+        images, obj_labels, dom_labels = data
         # obj_label messa a None per il target.
-        image = image.to(self.device)
+        images = images.to(self.device)
+        obj_labels = obj_labels.to(self.device)
+        dom_labels = dom_labels.to(self.device)
+        
+        
+
+
         if obj_label != None:
             obj_label = obj_label.to(self.device) #to be tested
         dom_label = dom_label.to(self.device)
@@ -63,7 +70,9 @@ class DomainDisentangleExperiment: # See point 2. of the project
             eloss_dom_to_obj = 0
         celoss_dom = self.criterion(dom_class, dom_label)
         eloss_obj_to_dom = - self.criterion(adv_obj_to_dom_class, dom_label)
-        rec_loss = self.recon_loss(recon_feat, features)
+        
+        #recontructor loss
+        rec_loss = self.mseloss(recon_feat, features) + self.kldiv(recon_feat, features)
 
         total_loss = celoss_obj + celoss_dom + eloss_dom_to_obj + eloss_obj_to_dom + rec_loss
         self.optimizer.zero_grad()

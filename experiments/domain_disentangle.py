@@ -17,6 +17,10 @@ class DomainDisentangleExperiment: # See point 2. of the project
 
         self.parameters2 = [self.model.category_encoder.parameters(), self.model.domain_encoder.parameters(), self.model.feature_extractor.parameters(), self.model.reconstructor.parameters()]
 
+        #debugging
+        print(experiment.model.parameters())
+        print(experiment.parameters2)
+
         # Setup optimization procedure
         # forse possiamo usare il gradient descend
         self.optimizer1 = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])

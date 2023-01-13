@@ -73,9 +73,6 @@ def main(opt):
         elif opt['experiment'] == 'domain_disentangle':
 
             source_train_loader_iterator = iter(source_train_loader)
-            
-            print(experiment.model.parameters())
-            print(experiment.parameters2)
 
             # Train loop
             while iteration < opt['max_iterations']:

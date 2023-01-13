@@ -20,7 +20,9 @@ class DomainDisentangleExperiment: # See point 2. of the project
         self.parameters2 = chain(self.model.category_encoder.parameters(), self.model.domain_encoder.parameters(), self.model.feature_extractor.parameters(), self.model.reconstructor.parameters())
 
         #debugging
+        print("---------------------------------")
         print([_ for _ in self.model.parameters()])
+        print("---------------------------------")
         print([_ for _ in self.parameters2])
         
         # Setup optimization procedure

@@ -20,16 +20,16 @@ class DomainDisentangleExperiment: # See point 2. of the project
         #debugging
         print(self.model.parameters())
         print(self.parameters2)
-
+        
         # Setup optimization procedure
         # forse possiamo usare il gradient descend
-        self.optimizer1 = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
-        self.optimizer2 = torch.optim.Adam(self.parameters2, lr=opt['lr'])
-        self.crossEntropyLoss = torch.nn.CrossEntropyLoss()
-        self.logSoftmax = torch.nn.LogSoftmax(dim=1)
-        self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
-        self.mseloss = torch.nn.MSELoss()
-        self.kldivloss = torch.nn.KLDivLoss(reduction="batchmean")
+        #self.optimizer1 = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
+        #self.optimizer2 = torch.optim.Adam(self.parameters2, lr=opt['lr'])
+        #self.crossEntropyLoss = torch.nn.CrossEntropyLoss()
+        #self.logSoftmax = torch.nn.LogSoftmax(dim=1)
+        #self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
+        #self.mseloss = torch.nn.MSELoss()
+        #self.kldivloss = torch.nn.KLDivLoss(reduction="batchmean")
 
     def save_checkpoint(self, path, iteration, best_accuracy, total_train_loss):
         checkpoint = {}

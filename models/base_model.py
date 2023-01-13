@@ -84,7 +84,7 @@ class DomainDisentangleModel(nn.Module):
         self.category_classifier = nn.Linear(512, 7)
 
         ##
-        self.cv = nn.Conv1d(2,1,2)
+        #self.cv = nn.Conv1d(2,1,2)
 
         self.reconstructor = nn.Sequential(
             nn.Linear(512, 512),
@@ -102,7 +102,8 @@ class DomainDisentangleModel(nn.Module):
 
         if alpha == None:
             ## convolute the concatenated c_x and d_x
-            fg = self.cv(torch.cat((c_x,d_x),0))
+            #fg = self.cv(torch.cat((c_x,d_x),0))
+            fg = c_x + d_x
             r_x = self.reconstructor(fg)
 
         # domain_label 0 => source, domain_label 1 => target

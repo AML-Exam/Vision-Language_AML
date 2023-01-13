@@ -16,14 +16,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         for param in self.model.parameters():
             param.requires_grad = True
 
-        #self.parameters2 = chain(self.model.category_encoder.parameters(), self.model.domain_encoder.parameters(), self.model.feature_extractor.parameters(), self.model.reconstructor.parameters())
-        self.parameters2 = [self.model.category_encoder.parameters(), self.model.domain_encoder.parameters(), self.model.feature_extractor.parameters(), self.model.reconstructor.parameters()]
-
-        #debugging
-        print("---------------------------------")
-        print([_ for _ in self.model.parameters()])
-        print("---------------------------------")
-        print([_ for _ in self.parameters2])
+        self.parameters2 = list(self.model.category_encoder.parameters()) + list(self.model.domain_encoder.parameters()) + list(self.model.feature_extractor.parameters()) + list(self.model.reconstructor.parameters())
         
         # Setup optimization procedure
         # forse possiamo usare il gradient descend
@@ -43,7 +36,8 @@ class DomainDisentangleExperiment: # See point 2. of the project
         checkpoint['total_train_loss'] = total_train_loss
 
         checkpoint['model'] = self.model.state_dict()
-        checkpoint['optimizer'] = self.optimizer.state_dict()
+        checkpoint['optimizer1'] = self.optimizer1.state_dict()
+        checkpoint['optimizer2'] = self.optimizer2.state_dict()
 
         torch.save(checkpoint, path)
 
@@ -55,7 +49,8 @@ class DomainDisentangleExperiment: # See point 2. of the project
         total_train_loss = checkpoint['total_train_loss']
 
         self.model.load_state_dict(checkpoint['model'])
-        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.optimizer1.load_state_dict(checkpoint['optimizer1'])
+        self.optimizer2.load_state_dict(checkpoint['optimizer2'])
 
         return iteration, best_accuracy, total_train_loss
 
@@ -76,13 +71,13 @@ class DomainDisentangleExperiment: # See point 2. of the project
         # Source path
         source_class_outputs, source_dom_outputs, features, rec_features = self.model(source_images, 0)
         source_class_loss = self.crossEntropyLoss(source_class_outputs, source_labels)
-        source_dom_loss = self.crossEntropyLoss(source_dom_outputs, torch.zeros(self.opt['batch_size'], dtype = torch.long).to(self.device))
+        source_dom_loss = self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size(), dtype = torch.long).to(self.device))
         reconstruction_loss = self.mseloss(rec_features, features) + self.kldivloss(rec_features, features)
         source_partial_loss = source_class_loss + source_dom_loss + reconstruction_loss
         source_partial_loss.backward()
         # Target path
         target_dom_outputs, features, rec_features = self.model(target_images, 1)
-        target_dom_loss = self.crossEntropyLoss(target_dom_outputs, torch.ones(self.opt['batch_size'], dtype = torch.long).to(self.device))
+        target_dom_loss = self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size(), dtype = torch.long).to(self.device))
         reconstruction_loss = self.mseloss(rec_features, features) + self.kldivloss(rec_features, features)
         target_partial_loss = target_dom_loss + reconstruction_loss
         target_partial_loss.backward()

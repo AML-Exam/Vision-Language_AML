@@ -46,8 +46,9 @@ class DomainDisentangleExperiment: # See point 2. of the project
 
         return iteration, best_accuracy, total_train_loss
 
-    def train_iteration(self, data):
-        images, obj_labels, dom_labels = data
+    def train_iteration(self, target, source):
+        target_images, _ = target
+        source_images, source_obj_labels = source
         # obj_label messa a None per il target.
         images = images.to(self.device)
         obj_labels = obj_labels.to(self.device)

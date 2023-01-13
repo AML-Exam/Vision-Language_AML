@@ -22,7 +22,7 @@ def parse_arguments():
     
     # Additional arguments can go below this line:
     #parser.add_argument('--test', type=str, default='some default value', help='some hint that describes the effect')
-    parser.add_argument('--alpha', type=int, default=1, help='entropy loss weight')
+    parser.add_argument('--alpha', type=float, default=1, help='entropy loss weight')
 
     # Build options dict
     opt = vars(parser.parse_args())

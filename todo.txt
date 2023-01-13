@@ -1,0 +1,5 @@
+-provare entropy loss rimettendo l'altra softmax
+-provare il ReverseLayer (exer3) per l'adversarial
+-unire le backward in 2 sole backward (direct e adversarial)
+-aggiungere il percorso di target domain feature verso l'object classifier
+-aggiungere i pesi alle varie loss (w1,w2,w3 paper)

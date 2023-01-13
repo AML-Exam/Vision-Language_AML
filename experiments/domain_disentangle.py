@@ -1,5 +1,6 @@
 import torch
 from models.base_model import DomainDisentangleModel
+from itertools import chain
 
 class DomainDisentangleExperiment: # See point 2. of the project
     
@@ -16,7 +17,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             param.requires_grad = True
             print(param)
 
-        self.parameters2 = self.model.category_encoder.parameters().append(self.model.domain_encoder.parameters().append(self.model.feature_extractor.parameters().append(self.model.reconstructor.parameters())))
+        self.parameters2 = chain(self.model.category_encoder.parameters(), self.model.domain_encoder.parameters(), self.model.feature_extractor.parameters(), self.model.reconstructor.parameters())
 
         #debugging
         print([_ for _ in self.model.parameters()])

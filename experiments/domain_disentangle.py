@@ -15,10 +15,9 @@ class DomainDisentangleExperiment: # See point 2. of the project
         self.model.to(self.device)
         for param in self.model.parameters():
             param.requires_grad = True
-            print(param)
 
         #self.parameters2 = chain(self.model.category_encoder.parameters(), self.model.domain_encoder.parameters(), self.model.feature_extractor.parameters(), self.model.reconstructor.parameters())
-        self.parameters2 = [self.model.category_encoder, self.model.domain_encoder, self.model.feature_extractor, self.model.reconstructor]
+        self.parameters2 = [self.model.category_encoder.parameters(), self.model.domain_encoder.parameters(), self.model.feature_extractor.parameters(), self.model.reconstructor.parameters()]
 
         #debugging
         print("---------------------------------")
@@ -29,7 +28,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         # Setup optimization procedure
         # forse possiamo usare il gradient descend
         self.optimizer1 = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
-        self.optimizer2 = torch.optim.Adam(self.parameters2.parameters(), lr=opt['lr'])
+        self.optimizer2 = torch.optim.Adam(self.parameters2, lr=opt['lr'])
         self.crossEntropyLoss = torch.nn.CrossEntropyLoss()
         self.logSoftmax = torch.nn.LogSoftmax(dim=1)
         self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))

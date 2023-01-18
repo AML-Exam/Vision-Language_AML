@@ -78,7 +78,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         reconstruction_loss = self.mseloss(rec_features, features)# + self.kldivloss(rec_features, features)
         print("reconstruction_loss: ",reconstruction_loss.item())
         source_partial_loss = source_class_loss + source_dom_loss + reconstruction_loss
-        source_partial_loss.backward()
+  #      source_partial_loss.backward()
         # Target path
         target_dom_outputs, features, rec_features = self.model(target_images, 1)
         target_dom_loss = self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
@@ -86,31 +86,33 @@ class DomainDisentangleExperiment: # See point 2. of the project
         reconstruction_loss = self.mseloss(rec_features, features) #+ self.kldivloss(rec_features, features)
         print("reconstruction_loss: ",reconstruction_loss.item())
         target_partial_loss = target_dom_loss + reconstruction_loss
-        target_partial_loss.backward()
+  #      target_partial_loss.backward()
 
-        self.optimizer1.step()
+      #  self.optimizer1.step()
 
         ## Adversarial part
         # Source adv path
-        source_adv_domC_outputs, _ = self.model(source_images, 0, self.opt['alpha'])
-        source_adv_domC_loss = -self.entropyLoss(source_adv_domC_outputs)
-        
+        source_adv_domC_outputs, source_adv_objC_outputs = self.model(source_images, 0, self.opt['alpha'])
+        source_adv_domC_loss = self.entropyLoss(source_adv_domC_outputs)
+        print("source_adv_domC_loss: ",source_adv_domC_loss.item())
+        source_adv_objC_loss = self.entropyLoss(source_adv_objC_outputs)
+        print("source_adv_objC_loss: ",source_adv_objC_loss.item())
+        source_adv_partial_loss = self.opt['alpha']*(source_adv_domC_loss + source_adv_objC_loss)
+      #  source_adv_partial_loss.backward()
+        # Target adv path
         target_adv_domC_outputs = self.model(target_images, 1, self.opt['alpha'])
-        target_adv_domC_loss =  self.opt['alpha']*-self.entropyLoss(target_adv_domC_outputs)
+        target_adv_domC_loss =  self.opt['alpha']*self.entropyLoss(target_adv_domC_outputs)
+        print("target_adv_domC_loss: ",target_adv_domC_loss.item())
+   #     target_adv_domC_loss.backward()
 
-        source_adv_partial_loss = self.opt['alpha']*(source_adv_domC_loss + target_adv_domC_loss)
-        source_adv_partial_loss.backward()
-
-        _, source_adv_objC_outputs = self.model(source_images, 0, self.opt['alpha'])
-        source_adv_objC_loss = -self.entropyLoss(source_adv_objC_outputs)
-        
-        source_adv_objC_loss.backward()
-
-        self.optimizer2.step()
+    #    self.optimizer2.step()
 
         print(source_partial_loss.item(), " ", target_partial_loss.item(), " ", source_adv_partial_loss.item(), " ", target_adv_domC_loss.item())
-        total_loss = source_partial_loss + target_partial_loss + -source_adv_partial_loss + -target_adv_domC_loss
-        
+        total_loss = source_partial_loss + target_partial_loss + source_adv_partial_loss + target_adv_domC_loss
+        total_loss.backward()
+
+        self.optimizer1.step()
+
         return total_loss.item()
         #raise NotImplementedError('[TODO] Implement DomainDisentangleExperiment.')
 

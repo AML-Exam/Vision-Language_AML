@@ -16,12 +16,12 @@ class DomainDisentangleExperiment: # See point 2. of the project
         for param in self.model.parameters():
             param.requires_grad = True
 
-        self.parameters2 = list(self.model.category_encoder.parameters()) + list(self.model.domain_encoder.parameters()) + list(self.model.feature_extractor.parameters()) + list(self.model.reconstructor.parameters())
+        #self.parameters2 = list(self.model.category_encoder.parameters()) + list(self.model.domain_encoder.parameters()) + list(self.model.feature_extractor.parameters()) + list(self.model.reconstructor.parameters())
         
         # Setup optimization procedure
         # forse possiamo usare il gradient descend
         self.optimizer1 = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
-        self.optimizer2 = torch.optim.Adam(self.parameters2, lr=opt['lr'])
+        #self.optimizer2 = torch.optim.Adam(self.parameters2, lr=opt['lr'])
         self.crossEntropyLoss = torch.nn.CrossEntropyLoss()
         self.logSoftmax = torch.nn.LogSoftmax(dim=1)
         self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
@@ -37,7 +37,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
 
         checkpoint['model'] = self.model.state_dict()
         checkpoint['optimizer1'] = self.optimizer1.state_dict()
-        checkpoint['optimizer2'] = self.optimizer2.state_dict()
+        #checkpoint['optimizer2'] = self.optimizer2.state_dict()
 
         torch.save(checkpoint, path)
 
@@ -50,7 +50,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
 
         self.model.load_state_dict(checkpoint['model'])
         self.optimizer1.load_state_dict(checkpoint['optimizer1'])
-        self.optimizer2.load_state_dict(checkpoint['optimizer2'])
+        #self.optimizer2.load_state_dict(checkpoint['optimizer2'])
 
         return iteration, best_accuracy, total_train_loss
 
@@ -82,7 +82,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             reconstruction_loss = self.mseloss(rec_features, features)
             target_adv_domC_outputs = self.model(images, 1, self.opt['alpha'])
             target_adv_domC_loss =  self.entropyLoss(target_adv_domC_outputs)
-            total_loss = target_dom_loss + target_adv_domC_outputs*self.opt["alpha"]
+            total_loss = target_dom_loss + target_adv_domC_loss*self.opt["alpha"]
         #target_images, _ = target
         #source_images, source_labels = source
 
@@ -137,6 +137,8 @@ class DomainDisentangleExperiment: # See point 2. of the project
 
         # print(source_partial_loss.item(), " ", target_partial_loss.item(), " ", source_adv_partial_loss.item(), " ", target_adv_domC_loss.item())
         # total_loss = source_partial_loss + target_partial_loss + -source_adv_partial_loss + -target_adv_domC_loss
+        total_loss.backward()
+        self.optimizer1.step()
         print(total_loss.item())
         return total_loss.item()
         #raise NotImplementedError('[TODO] Implement DomainDisentangleExperiment.')

@@ -85,7 +85,8 @@ def main(opt):
                         source_train_loader_iterator = iter(source_train_loader)
                         source_data = next(source_train_loader_iterator)
 
-                    total_train_loss += experiment.train_iteration(target_data, source_data)
+                    total_train_loss += experiment.train_iteration(source_data, 0)
+                    total_train_loss += experiment.train_iteration(target_data, 1)
 
                     if iteration % opt['print_every'] == 0:
                         logging.info(f'[TRAIN - {iteration}] Loss: {total_train_loss / (iteration + 1)}')

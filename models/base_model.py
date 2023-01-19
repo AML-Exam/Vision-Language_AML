@@ -97,38 +97,49 @@ class DomainDisentangleModel(nn.Module):
             nn.ReLU()
         )
 
-    def forward(self, x, domain_label, alpha = None):
+    def forward(self, x, is_train):
         # x = feature, y classification result
         # c = category, d = domain
         x = self.feature_extractor(x)
         c_x = self.category_encoder(x)
         d_x = self.domain_encoder(x)
 
-        if alpha == None:
-            ## convolute the concatenated c_x and d_x
-            #fg = self.cv(torch.cat((c_x,d_x),0))
+        # if alpha == None:
+        #     ## convolute the concatenated c_x and d_x
+        #     #fg = self.cv(torch.cat((c_x,d_x),0))
+        #     fg = c_x + d_x
+        #     r_x = self.reconstructor(fg)
+
+        # # domain_label 0 => source, domain_label 1 => target
+        # if domain_label == 0:
+        #     if alpha == None:
+        #         c_y = self.category_classifier(c_x)
+        #         d_y = self.domain_classifier(d_x)
+        #         return c_y, d_y, x, r_x
+        #     else:
+        #         a_c_y = self.category_classifier(d_x)
+        #         a_d_y = self.domain_classifier(c_x)
+        #         return a_d_y, a_c_y
+        # else:
+        #     if alpha == None:
+        #         d_y = self.domain_classifier(d_x)
+        #         return d_y, x, r_x
+        #     else:
+        #         a_d_y = self.domain_classifier(c_x)
+        #         return a_d_y
+
+        if is_train:
             fg = c_x + d_x
             r_x = self.reconstructor(fg)
-
-        # domain_label 0 => source, domain_label 1 => target
-        if domain_label == 0:
-            if alpha == None:
-                c_y = self.category_classifier(c_x)
-                d_y = self.domain_classifier(d_x)
-                return c_y, d_y, x, r_x
-            else:
-                a_c_y = self.category_classifier(d_x)
-                a_d_y = self.domain_classifier(c_x)
-                return a_d_y, a_c_y
+            c_y = self.category_classifier(c_x)
+            d_y = self.domain_classifier(d_x)
+            a_c_y = self.category_classifier(d_x)
+            a_d_y = self.domain_classifier(c_x)
+            return x, r_x, c_y, d_y, a_c_y, a_d_y
         else:
-            if alpha == None:
-                d_y = self.domain_classifier(d_x)
-                return d_y, x, r_x
-            else:
-                a_d_y = self.domain_classifier(c_x)
-                return a_d_y
-            
-
+            c_y = self.category_classifier(c_x)
+            d_y = self.domain_classifier(d_x)
+            return c_y
         
         #if target_label != None: #?????
         #    c_y = self.category_classifier(c_x)

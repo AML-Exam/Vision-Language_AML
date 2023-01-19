@@ -86,7 +86,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         else:
             images, _ = data
             images = images.to(self.device)
-            features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True)
+            features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs = self.model(images, True)
             target_dom_loss = self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
             reconstruction_loss = self.mseloss(rec_features, features)
             print("reconstruction_loss: ",reconstruction_loss.item())
@@ -94,6 +94,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             target_adv_objC_loss = self.entropyLoss(target_adv_objC_outputs)
             print("target_dom_loss: ",target_dom_loss.item())
             print("target_adv_domC_loss: ",target_adv_domC_loss.item())
+            print("target_adv_objC_loss: ",target_adv_objC_loss.item())
             total_loss = weigths[0]*(target_dom_loss + target_adv_domC_loss*self.opt["alpha"]) + weigths[1]*target_adv_objC_loss*self.opt['alpha'] + weigths[2]*reconstruction_loss
             print("total_loss: ", total_loss.item())
         

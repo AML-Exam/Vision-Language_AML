@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision.models import resnet18
+from torch.autograd import Function
 
 from torch.autograd import Function
 
@@ -110,6 +111,10 @@ class DomainDisentangleModel(nn.Module):
             nn.ReLU(),
 
             nn.Linear(512, 512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.ReLU()
         )
 
     def forward(self, x, domain_label, alpha = None):

@@ -24,7 +24,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         self.optimizer2 = torch.optim.Adam(self.parameters2, lr=opt['lr'])
         self.crossEntropyLoss = torch.nn.CrossEntropyLoss()
         self.logSoftmax = torch.nn.LogSoftmax(dim=1)
-        self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
+        self.entropyLoss = lambda outputs : torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
         self.mseloss = torch.nn.MSELoss()
         self.kldivloss = torch.nn.KLDivLoss(reduction="batchmean")
 

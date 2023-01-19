@@ -82,7 +82,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             reconstruction_loss = self.mseloss(rec_features, features)
             target_adv_domC_outputs = self.model(images, 1, self.opt['alpha'])
             target_adv_domC_loss =  self.entropyLoss(target_adv_domC_outputs)
-            total_loss = target_dom_loss + target_adv_domC_loss*self.opt["alpha"]
+            total_loss = target_dom_loss + target_adv_domC_loss*self.opt["alpha"] + reconstruction_loss
         #target_images, _ = target
         #source_images, source_labels = source
 

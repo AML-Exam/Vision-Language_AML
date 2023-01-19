@@ -91,6 +91,10 @@ class DomainDisentangleModel(nn.Module):
             nn.ReLU(),
 
             nn.Linear(512, 512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.ReLU()
         )
 
     def forward(self, x, domain_label, alpha = None):

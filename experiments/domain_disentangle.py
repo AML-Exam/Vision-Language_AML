@@ -93,7 +93,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             target_adv_domC_loss =  self.entropyLoss(target_adv_domC_outputs)
             print("target_dom_loss: ",target_dom_loss.item())
             print("target_adv_domC_loss: ",target_adv_domC_loss.item())
-            total_loss = weigths[3]*target_dom_loss + weigths[4]*target_adv_domC_loss*self.opt["alpha"] + weigths[5]*reconstruction_loss
+            total_loss = weigths[3]*target_dom_loss + target_adv_domC_loss*self.opt["alpha"] + weigths[4]*reconstruction_loss
             print("total_loss: ", total_loss.item())
         
         #target_images, _ = target

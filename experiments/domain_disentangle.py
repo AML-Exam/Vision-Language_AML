@@ -80,7 +80,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             source_adv_objC_loss = self.entropyLoss(source_adv_objC_outputs)
             print("source_adv_domC_loss: ",source_adv_domC_loss.item())
             print("source_adv_objC_loss: ",source_adv_objC_loss.item())
-            total_loss = weigths[0]*(source_class_loss + self.opt["alpha"]*source_adv_objC_loss) + weigths[1]*(source_dom_loss + self.opt["alpha"]*source_adv_domC_loss) + weigths[2]*reconstruction_loss
+            total_loss = weigths[0]*(source_class_loss + self.opt["alpha"]*source_adv_domC_loss) + weigths[1]*(source_dom_loss + self.opt["alpha"]*source_adv_objC_loss) + weigths[2]*reconstruction_loss
             print("total_loss: ", total_loss.item())
         else:
             images, _ = data
@@ -93,7 +93,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             target_adv_domC_loss =  self.entropyLoss(target_adv_domC_outputs)
             print("target_dom_loss: ",target_dom_loss.item())
             print("target_adv_domC_loss: ",target_adv_domC_loss.item())
-            total_loss = weigths[3]*(target_dom_loss + target_adv_domC_loss*self.opt["alpha"]) + weigths[4]*reconstruction_loss
+            total_loss = weigths[3]*target_dom_loss + weigths[4]*target_adv_domC_loss*self.opt["alpha"] + weigths[5]*reconstruction_loss
             print("total_loss: ", total_loss.item())
         
         #target_images, _ = target

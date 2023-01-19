@@ -71,31 +71,31 @@ class DomainDisentangleExperiment: # See point 2. of the project
             images = images.to(self.device)
             labels = labels.to(self.device)
             features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True)
-            source_class_loss = self.crossEntropyLoss(source_class_outputs, labels)
+            source_class_loss = weigths[0]*self.crossEntropyLoss(source_class_outputs, labels)
             print(f"source_class_loss: {source_class_loss.item()}")
-            source_dom_loss = self.crossEntropyLoss(source_dom_outputs, torch.zeros(self.opt['batch_size'], dtype = torch.long).to(self.device))
+            source_dom_loss = weigths[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(self.opt['batch_size'], dtype = torch.long).to(self.device))
             print("source_dom_loss: ",source_dom_loss.item())
-            reconstruction_loss = self.mseloss(rec_features, features)
+            reconstruction_loss = weigths[2]*self.mseloss(rec_features, features)
             print("reconstruction_loss: ",reconstruction_loss.item())
-            source_adv_domC_loss = self.entropyLoss(source_adv_domC_outputs)
-            source_adv_objC_loss = self.entropyLoss(source_adv_objC_outputs)
+            source_adv_domC_loss = weigths[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
+            source_adv_objC_loss = weigths[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
             print("source_adv_domC_loss: ",source_adv_domC_loss.item())
             print("source_adv_objC_loss: ",source_adv_objC_loss.item())
-            total_loss = weigths[0]*(source_class_loss + self.opt["alpha"]*source_adv_domC_loss) + weigths[1]*(source_dom_loss + self.opt["alpha"]*source_adv_objC_loss) + weigths[2]*reconstruction_loss
+            total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss
             print("total_loss: ", total_loss.item())
         else:
             images, _ = data
             images = images.to(self.device)
             features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs = self.model(images, True)
-            target_dom_loss = self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
-            reconstruction_loss = self.mseloss(rec_features, features)
+            target_dom_loss = weigths[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
+            reconstruction_loss = weigths[2]*self.mseloss(rec_features, features)
             print("reconstruction_loss: ",reconstruction_loss.item())
-            target_adv_domC_loss =  self.entropyLoss(target_adv_domC_outputs)
-            target_adv_objC_loss = self.entropyLoss(target_adv_objC_outputs)
+            target_adv_domC_loss =  weigths[0]*self.opt["alpha"]*self.entropyLoss(target_adv_domC_outputs)
+            target_adv_objC_loss = weigths[1]*self.opt['alpha']*self.entropyLoss(target_adv_objC_outputs)
             print("target_dom_loss: ",target_dom_loss.item())
             print("target_adv_domC_loss: ",target_adv_domC_loss.item())
             print("target_adv_objC_loss: ",target_adv_objC_loss.item())
-            total_loss = weigths[0]*(target_dom_loss + target_adv_domC_loss*self.opt["alpha"]) + weigths[1]*target_adv_objC_loss*self.opt['alpha'] + weigths[2]*reconstruction_loss
+            total_loss = (target_dom_loss + target_adv_domC_loss) + target_adv_objC_loss + reconstruction_loss
             print("total_loss: ", total_loss.item())
         
         

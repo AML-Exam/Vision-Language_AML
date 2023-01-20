@@ -28,6 +28,8 @@ class DomainDisentangleExperiment: # See point 2. of the project
         self.mseloss = torch.nn.MSELoss()
         self.kldivloss = torch.nn.KLDivLoss(reduction="batchmean")
 
+        self.weights = [0.6, 0.3, 0.1]
+
     def save_checkpoint(self, path, iteration, best_accuracy, total_train_loss):
         checkpoint = {}
 
@@ -60,7 +62,6 @@ class DomainDisentangleExperiment: # See point 2. of the project
         
         images = []
         labels = []
-        weigths = [0.6, 0.3, 0.1]
 
         self.optimizer1.zero_grad()
 
@@ -71,14 +72,14 @@ class DomainDisentangleExperiment: # See point 2. of the project
             images = images.to(self.device)
             labels = labels.to(self.device)
             features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True)
-            source_class_loss = weigths[0]*self.crossEntropyLoss(source_class_outputs, labels)
+            source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
             print(f"source_class_loss: {source_class_loss.item()}")
-            source_dom_loss = weigths[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(self.opt['batch_size'], dtype = torch.long).to(self.device))
+            source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(self.opt['batch_size'], dtype = torch.long).to(self.device))
             print("source_dom_loss: ",source_dom_loss.item())
-            reconstruction_loss = weigths[2]*self.mseloss(rec_features, features)
+            reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
             print("reconstruction_loss: ",reconstruction_loss.item())
-            source_adv_domC_loss = weigths[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
-            source_adv_objC_loss = weigths[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
+            source_adv_domC_loss = self.weights[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
+            source_adv_objC_loss = self.weights[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
             print("source_adv_domC_loss: ",source_adv_domC_loss.item())
             print("source_adv_objC_loss: ",source_adv_objC_loss.item())
             total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss
@@ -87,11 +88,11 @@ class DomainDisentangleExperiment: # See point 2. of the project
             images, _ = data
             images = images.to(self.device)
             features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs = self.model(images, True)
-            target_dom_loss = weigths[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
-            reconstruction_loss = weigths[2]*self.mseloss(rec_features, features)
+            target_dom_loss = self.weights[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
+            reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
             print("reconstruction_loss: ",reconstruction_loss.item())
-            target_adv_domC_loss =  weigths[0]*self.opt["alpha"]*self.entropyLoss(target_adv_domC_outputs)
-            target_adv_objC_loss = weigths[1]*self.opt['alpha']*self.entropyLoss(target_adv_objC_outputs)
+            target_adv_domC_loss =  self.weights[0]*self.opt["alpha"]*self.entropyLoss(target_adv_domC_outputs)
+            target_adv_objC_loss = self.weights[1]*self.opt['alpha']*self.entropyLoss(target_adv_objC_outputs)
             print("target_dom_loss: ",target_dom_loss.item())
             print("target_adv_domC_loss: ",target_adv_domC_loss.item())
             print("target_adv_objC_loss: ",target_adv_objC_loss.item())

@@ -37,6 +37,11 @@ def main(opt):
     else:
         raise ValueError('Experiment not yet supported.')
 
+    # Setup logger
+    if opt['experiment'] == 'domain_disentangle':
+        alpha = opt['alpha']
+        logging.basicConfig(filename=f'{opt["output_path"]}/log_w1={experiment.weights[0]}_w2={experiment.weights[1]}_w3={experiment.weights[2]}_alpha={alpha}.txt', format='%(message)s', level=logging.INFO, filemode='a')
+
     if not opt['test']: # Skip training if '--test' flag is set
         iteration = 0
         best_accuracy = 0
@@ -114,6 +119,9 @@ def main(opt):
     test_accuracy, _ = experiment.validate(test_loader)
     logging.info(f'[TEST] Accuracy: {(100 * test_accuracy):.2f} \n(best accuracy {(100 * best_accuracy):.2f} registered at {iteration})')
 
+    if opt['experiment'] == 'domain_disentangle':
+        logging.info(f'Tested with weights: w1={experiment.weights[0]}, w2={experiment.weights[1]}, w3={experiment.weights[2]}, alpha={alpha}')
+
 if __name__ == '__main__':
 
     opt = parse_arguments()
@@ -121,7 +129,6 @@ if __name__ == '__main__':
     # Setup output directories
     os.makedirs(opt['output_path'], exist_ok=True)
 
-    # Setup logger
-    logging.basicConfig(filename=f'{opt["output_path"]}/log.txt', format='%(message)s', level=logging.INFO, filemode='a')
+    
 
     main(opt)

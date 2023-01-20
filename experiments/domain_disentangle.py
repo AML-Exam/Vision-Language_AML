@@ -114,7 +114,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
                 x = x.to(self.device)
                 y = y.to(self.device)
 
-                logits = self.model(x, False)
+                logits = self.model(x, False, self.opt["alpha"])
                 loss += self.crossEntropyLoss(logits, y)
                 pred = torch.argmax(logits, dim=-1)
 

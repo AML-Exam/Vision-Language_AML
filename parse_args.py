@@ -11,7 +11,7 @@ def parse_arguments():
     parser.add_argument('--max_iterations', type=int, default=500, help='Number of training iterations.')
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--num_workers', type=int, default=1)
-    parser.add_argument('--print_every', type=int, default=500)
+    parser.add_argument('--print_every', type=int, default=10)
     parser.add_argument('--validate_every', type=int, default=10)
 
     parser.add_argument('--output_path', type=str, default='.', help='Where to create the output directory containing logs and weights.')

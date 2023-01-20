@@ -97,7 +97,7 @@ class DomainDisentangleModel(nn.Module):
             nn.ReLU()
         )
 
-    def forward(self, x, is_train, alpha):
+    def forward(self, x, is_train):
         # x = feature, y classification result
         # c = category, d = domain
         x = self.feature_extractor(x)

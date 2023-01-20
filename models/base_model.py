@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 from torchvision.models import resnet18
 
-from torch.autograd import Function
-
 class FeatureExtractor(nn.Module):
     def __init__(self):
         super(FeatureExtractor, self).__init__()
@@ -48,21 +46,6 @@ class BaselineModel(nn.Module):
         x = self.category_encoder(x)
         x = self.classifier(x)
         return x
-
-class ReverseLayerF(Function):
-    # Forwards identity
-    # Sends backward reversed gradients
-    @staticmethod
-    def forward(ctx, x, alpha):
-        ctx.alpha = alpha
-
-        return x.view_as(x)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        output = grad_output.neg() * ctx.alpha
-
-        return output, None
 
 class DomainDisentangleModel(nn.Module):
     def __init__(self):
@@ -152,8 +135,6 @@ class DomainDisentangleModel(nn.Module):
             d_y = self.domain_classifier(d_x)
             a_c_y = self.category_classifier(d_x)
             a_d_y = self.domain_classifier(c_x)
-            a_c_y = ReverseLayerF.apply(a_c_y, alpha)
-            a_d_y = ReverseLayerF.apply(a_d_y, alpha)
             return x, r_x, c_y, d_y, a_c_y, a_d_y
         else:
             c_y = self.category_classifier(c_x)

@@ -24,7 +24,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         #self.optimizer2 = torch.optim.Adam(self.parameters2, lr=opt['lr'])
         self.crossEntropyLoss = torch.nn.CrossEntropyLoss()
         self.logSoftmax = torch.nn.LogSoftmax(dim=1)
-        self.entropyLoss = lambda outputs : torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
+        self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
         self.mseloss = torch.nn.MSELoss()
         self.kldivloss = torch.nn.KLDivLoss(reduction="batchmean")
 
@@ -70,7 +70,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             images, labels = data
             images = images.to(self.device)
             labels = labels.to(self.device)
-            features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True, self.opt["alpha"])
+            features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True)
             source_class_loss = weigths[0]*self.crossEntropyLoss(source_class_outputs, labels)
             print(f"source_class_loss: {source_class_loss.item()}")
             source_dom_loss = weigths[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(self.opt['batch_size'], dtype = torch.long).to(self.device))
@@ -86,7 +86,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         else:
             images, _ = data
             images = images.to(self.device)
-            features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs = self.model(images, True, self.opt["alpha"])
+            features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs = self.model(images, True)
             target_dom_loss = weigths[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
             reconstruction_loss = weigths[2]*self.mseloss(rec_features, features)
             print("reconstruction_loss: ",reconstruction_loss.item())
@@ -114,7 +114,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
                 x = x.to(self.device)
                 y = y.to(self.device)
 
-                logits = self.model(x, False, self.opt["alpha"])
+                logits = self.model(x, False)
                 loss += self.crossEntropyLoss(logits, y)
                 pred = torch.argmax(logits, dim=-1)
 

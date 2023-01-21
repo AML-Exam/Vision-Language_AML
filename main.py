@@ -42,6 +42,8 @@ def main(opt):
         alpha = opt['alpha']
         target_dom = opt['target_domain']
         logging.basicConfig(filename=f'{opt["output_path"]}/log_{target_dom}_w1={experiment.weights[0]}_w2={experiment.weights[1]}_w3={experiment.weights[2]}_alpha={alpha}.txt', format='%(message)s', level=logging.INFO, filemode='a')
+    else:
+        logging.basicConfig(filename=f'{opt["output_path"]}/log.txt', format='%(message)s', level=logging.INFO, filemode='a')
 
     if not opt['test']: # Skip training if '--test' flag is set
         iteration = 0

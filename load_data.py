@@ -142,9 +142,6 @@ def build_splits_domain_disentangle(opt):
                 test_examples.append([example, category_idx]) # each pair is [path_to_img, class_label]
             else:
                 target_train_examples.append([example, category_idx]) # each pair is [path_to_img, class_label]
-
-    print(f"Target train {len(target_train_examples)}")
-    print(f"Source train {len(source_train_examples)}")
     
     #for category_idx, examples_list in target_examples.items():
     #    for example in examples_list:

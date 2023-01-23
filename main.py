@@ -81,18 +81,23 @@ def main(opt):
 
         elif opt['experiment'] == 'domain_disentangle':
 
-            source_train_loader_iterator = iter(source_train_loader)
+            #source_train_loader_iterator = iter(source_train_loader)
+            target_train_loader_iterator = iter(target_train_loader)
 
             # Train loop
             while iteration < opt['max_iterations']:
 
-                for target_data in target_train_loader:
+                #for target_data in target_train_loader:
+                for source_data in source_train_loader:
 
                     try:
-                        source_data = next(source_train_loader_iterator)
+                        #source_data = next(source_train_loader_iterator)
+                        target_data = next(target_train_loader_iterator)
                     except StopIteration:
-                        source_train_loader_iterator = iter(source_train_loader)
-                        source_data = next(source_train_loader_iterator)
+                        #source_train_loader_iterator = iter(source_train_loader)
+                        #source_data = next(source_train_loader_iterator)
+                        target_train_loader_iterator = iter(target_train_loader)
+                        target_data = next(target_train_loader_iterator)
 
                     total_train_loss += experiment.train_iteration(source_data, 0)
                     total_train_loss += experiment.train_iteration(target_data, 1)
@@ -117,10 +122,18 @@ def main(opt):
             raise ValueError('Experiment not yet supported.')
         
 
-    # Test
+    # Test1
     iteration, best_accuracy, _ = experiment.load_checkpoint(f'{opt["output_path"]}/best_checkpoint.pth')
     test_accuracy, _ = experiment.validate(test_loader)
-    logging.info(f'[TEST] Accuracy: {(100 * test_accuracy):.2f} \n(best accuracy {(100 * best_accuracy):.2f} registered at {iteration})')
+    logging.info(f'[TEST with BEST] Accuracy: {(100 * test_accuracy):.2f} \n(best accuracy {(100 * best_accuracy):.2f} registered at {iteration})')
+
+    if opt['experiment'] == 'domain_disentangle':
+        logging.info(f'Tested with weights: w1={experiment.weights[0]}, w2={experiment.weights[1]}, w3={experiment.weights[2]}, alpha={alpha}')
+
+    # Test2
+    iteration, last_accuracy, _ = experiment.load_checkpoint(f'{opt["output_path"]}/last_checkpoint.pth')
+    test_accuracy, _ = experiment.validate(test_loader)
+    logging.info(f'[TEST with LAST] Accuracy: {(100 * test_accuracy):.2f} \n(last accuracy {(100 * last_accuracy):.2f} registered at {iteration})')
 
     if opt['experiment'] == 'domain_disentangle':
         logging.info(f'Tested with weights: w1={experiment.weights[0]}, w2={experiment.weights[1]}, w3={experiment.weights[2]}, alpha={alpha}')

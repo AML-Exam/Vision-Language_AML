@@ -1,6 +1,5 @@
 import torch
 from models.base_model import DomainDisentangleModel
-from itertools import chain
 
 class DomainDisentangleExperiment: # See point 2. of the project
     

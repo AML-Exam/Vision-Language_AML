@@ -119,7 +119,7 @@ def build_splits_domain_disentangle(opt):
     source_val_split_length = source_total_examples * 0.2 # 20% of the source used for validation
     
     # Build splits - we train and test on the target domain
-    target_val_split_length = target_total_examples * 0.2 # 20% of the target used for test
+    target_test_split_length = target_total_examples * 0.2 # 20% of the target used for test
 
     source_train_examples = []
     target_train_examples = []
@@ -136,7 +136,7 @@ def build_splits_domain_disentangle(opt):
                 source_train_examples.append([example, category_idx]) # each pair is [path_to_img, class_label]
 
     for category_idx, examples_list in target_examples.items():
-        split_idx_t = round(target_category_ratios[category_idx] * target_val_split_length)
+        split_idx_t = round(target_category_ratios[category_idx] * target_test_split_length)
         for i, example in enumerate(examples_list):
             if i < split_idx_t:
                 test_examples.append([example, category_idx]) # each pair is [path_to_img, class_label]

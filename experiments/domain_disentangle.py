@@ -74,7 +74,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
             features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True)
             source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
             #print(f"source_class_loss: {source_class_loss.item()}")
-            source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(self.opt['batch_size'], dtype = torch.long).to(self.device))
+            source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size()[0], dtype = torch.long).to(self.device))
             #print("source_dom_loss: ",source_dom_loss.item())
             reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
             #print("reconstruction_loss: ",reconstruction_loss.item())

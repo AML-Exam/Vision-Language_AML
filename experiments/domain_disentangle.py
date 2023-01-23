@@ -65,7 +65,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
 
         self.optimizer1.zero_grad()
 
-        print("-----------------------------")
+        #print("-----------------------------")
 
         if domain == 0:
             images, labels = data

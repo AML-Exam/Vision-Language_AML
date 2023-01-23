@@ -31,7 +31,7 @@ def main(opt):
         train_loader, validation_loader, test_loader = build_splits_baseline(opt)
     elif opt['experiment'] == 'domain_disentangle':
         experiment = DomainDisentangleExperiment(opt)
-        source_train_loader, target_train_loader, target_validation_loader, test_loader = build_splits_domain_disentangle(opt) #source_validation_loader,
+        source_train_loader, target_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle(opt)
     elif opt['experiment'] == 'clip_disentangle':
         raise ValueError('Experiment not yet supported.')
     else:
@@ -102,7 +102,7 @@ def main(opt):
                     
                     if iteration % opt['validate_every'] == 0:
                         # Run validation
-                        val_accuracy, val_loss = experiment.validate(target_validation_loader)
+                        val_accuracy, val_loss = experiment.validate(source_validation_loader)
                         logging.info(f'[VAL - {iteration}] Loss: {val_loss} | Accuracy: {(100 * val_accuracy):.2f}')
                         if val_accuracy > best_accuracy:
                             best_accuracy = val_accuracy

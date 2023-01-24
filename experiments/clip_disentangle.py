@@ -75,6 +75,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
             images, labels, descriptions = data
             images = images.to(self.device)
             labels = labels.to(self.device)
+            descriptions = descriptions.to(self.device)
             features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True)
             source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
             #print(f"source_class_loss: {source_class_loss.item()}")
@@ -89,15 +90,16 @@ class CLIPDisentangleExperiment: # See point 4. of the project
 
             tokenized_text = self.clip_model.tokenize(descriptions).to(self.device)
             text_features = self.clip_model.encode_text(tokenized_text)
-
+            
             clip_loss = self.l2loss(text_features, source_dom_outputs)
             print("clip_loss: ", clip_loss.item())
 
             total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss + clip_loss
             #print("total_loss: ", total_loss.item())
         else:
-            images, _ = data
+            images, _, descriptions = data
             images = images.to(self.device)
+            descriptions = descriptions.to(self.device)
             features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs = self.model(images, True)
             target_dom_loss = self.weights[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
             reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)

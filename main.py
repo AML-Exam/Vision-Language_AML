@@ -33,7 +33,8 @@ def main(opt):
         experiment = DomainDisentangleExperiment(opt)
         source_train_loader, target_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle(opt)
     elif opt['experiment'] == 'clip_disentangle':
-        raise ValueError('Experiment not yet supported.')
+        experiment = CLIPDisentangleExperiment(opt)
+        source_train_loader, target_train_loader, source_validation_loader, test_loader = build_splits_clip_disentangle(opt)
     else:
         raise ValueError('Experiment not yet supported.')
 
@@ -80,6 +81,45 @@ def main(opt):
                         break
 
         elif opt['experiment'] == 'domain_disentangle':
+
+            #source_train_loader_iterator = iter(source_train_loader)
+            target_train_loader_iterator = iter(target_train_loader)
+
+            # Train loop
+            while iteration < opt['max_iterations']:
+
+                #for target_data in target_train_loader:
+                for source_data in source_train_loader:
+
+                    try:
+                        #source_data = next(source_train_loader_iterator)
+                        target_data = next(target_train_loader_iterator)
+                    except StopIteration:
+                        #source_train_loader_iterator = iter(source_train_loader)
+                        #source_data = next(source_train_loader_iterator)
+                        target_train_loader_iterator = iter(target_train_loader)
+                        target_data = next(target_train_loader_iterator)
+
+                    total_train_loss += experiment.train_iteration(source_data, 0)
+                    total_train_loss += experiment.train_iteration(target_data, 1)
+
+                    if iteration % opt['print_every'] == 0:
+                        logging.info(f'[TRAIN - {iteration}] Loss: {total_train_loss / (iteration + 1)}')
+                    
+                    if iteration % opt['validate_every'] == 0:
+                        # Run validation
+                        val_accuracy, val_loss = experiment.validate(source_validation_loader)
+                        logging.info(f'[VAL - {iteration}] Loss: {val_loss} | Accuracy: {(100 * val_accuracy):.2f}')
+                        if val_accuracy > best_accuracy:
+                            best_accuracy = val_accuracy
+                            experiment.save_checkpoint(f'{opt["output_path"]}/best_checkpoint.pth', iteration, best_accuracy, total_train_loss)
+                        experiment.save_checkpoint(f'{opt["output_path"]}/last_checkpoint.pth', iteration, best_accuracy, total_train_loss)
+
+                    iteration += 1
+                    if iteration > opt['max_iterations']:
+                        break
+
+        elif opt['experiment'] == 'clip_disentangle':
 
             #source_train_loader_iterator = iter(source_train_loader)
             target_train_loader_iterator = iter(target_train_loader)

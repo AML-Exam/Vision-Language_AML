@@ -1,6 +1,7 @@
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T
+import json
 
 CATEGORIES = {
     'dog': 0,
@@ -25,6 +26,19 @@ class PACSDatasetBaseline(Dataset):
         x = self.transform(Image.open(img_path).convert('RGB'))
         return x, y
 
+class PACSDatasetClip(Dataset):
+    def __init__(self, examples, transform):
+        self.examples = examples
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.examples)
+    
+    def __getitem__(self, index):
+        example, y = self.examples[index]
+        x = self.transform(Image.open(example[0]).convert('RGB'))
+        return x, y, example[1]
+
 def read_lines(data_path, domain_name):
     examples = {}
     with open(f'{data_path}/{domain_name}.txt') as f:
@@ -44,21 +58,34 @@ def read_lines(data_path, domain_name):
 
 def read_lines_clip(data_path, domain_name):
     examples = {}
-    with open(f'{data_path}/{domain_name}.txt') as f:
-        lines = f.readlines()
+    #with open(f'{data_path}/{domain_name}.txt') as f:
+    #    lines = f.readlines()
+#
+    #for line in lines: 
+    #    line = line.strip().split()[0].split('/')
+    #    category_name = line[3]
+    #    category_idx = CATEGORIES[category_name]
+    #    image_name = line[4]
+    #    image_path = f'{data_path}/kfold/{domain_name}/{category_name}/{image_name}'
+    #    if category_idx not in examples.keys():
+    #        examples[category_idx] = [image_path]
+    #    else:
+    #        examples[category_idx].append(image_path)
 
-    for line in lines: 
-        line = line.strip().split()[0].split('/')
-        category_name = line[3]
-        category_idx = CATEGORIES[category_name]
-        image_name = line[4]
-        image_path = f'{data_path}/kfold/{domain_name}/{category_name}/{image_name}'
-        if category_idx not in examples.keys():
-            examples[category_idx] = [image_path]
-        else:
-            examples[category_idx].append(image_path)
-
-    #TODO: recover the descriptions from the json
+    
+    with open(f'{data_path}/descriptions/{domain_name}_descriptions.txt') as f:
+        for line in f.readlines(): 
+            dict_tmp = json.loads(line.strip())
+            path = dict_tmp['image_name'].split('/')
+            category_name = path[1]
+            category_idx = CATEGORIES[category_name]
+            image_name = path[2]
+            image_path = f'{data_path}/kfold/{domain_name}/{category_name}/{image_name}'
+            description = dict_tmp['descriptions']
+            if category_idx not in examples.keys():
+                examples[category_idx] = [(image_path, description)]
+            else:
+                examples[category_idx].append((image_path, description))
 
     return examples
 
@@ -242,12 +269,6 @@ def build_splits_clip_disentangle(opt):
             else:
                 target_train_examples.append([example, category_idx]) # each pair is [path_to_img, class_label]
     
-    #for category_idx, examples_list in target_examples.items():
-    #    for example in examples_list:
-    #        test_examples.append([example, category_idx]) # each pair is [path_to_img, class_label]
-
-    #val_examples = source_val_examples + target_val_examples
-    
     # Transforms
     normalize = T.Normalize([0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) # ResNet18 - ImageNet Normalization
 
@@ -267,11 +288,10 @@ def build_splits_clip_disentangle(opt):
     ])
 
     # Dataloaders
-    source_train_loader = DataLoader(PACSDatasetBaseline(source_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
-    source_val_loader = DataLoader(PACSDatasetBaseline(source_val_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
-    target_train_loader = DataLoader(PACSDatasetBaseline(target_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
-    #target_val_loader = DataLoader(PACSDatasetBaseline(target_val_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
-    test_loader = DataLoader(PACSDatasetBaseline(test_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
+    source_train_loader = DataLoader(PACSDatasetClip(source_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
+    source_val_loader = DataLoader(PACSDatasetClip(source_val_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
+    target_train_loader = DataLoader(PACSDatasetClip(target_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
+    test_loader = DataLoader(PACSDatasetClip(test_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
 
     return source_train_loader, target_train_loader, source_val_loader, test_loader
     #raise NotImplementedError('[TODO] Implement build_splits_clip_disentangle') #TODO

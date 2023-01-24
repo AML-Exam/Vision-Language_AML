@@ -37,7 +37,7 @@ class PACSDatasetClip(Dataset):
     def __getitem__(self, index):
         example, y = self.examples[index]
         x = self.transform(Image.open(example[0]).convert('RGB'))
-        return x, y, example[1]
+        return (x, example[1]), y
 
 def read_lines(data_path, domain_name):
     examples = {}

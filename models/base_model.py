@@ -156,3 +156,69 @@ class DomainDisentangleModel(nn.Module):
         ## ritorniamo le feature estratte e quelle ricostruite per calcolare la reconstruction loss ( x, r_x )
         ## ritorniamo l'output dei classificatori per le altre loss function ( c_y, d_y )
         ## ritorniamo l'output per l'adversarial search ( a_c_y, a_d_y )
+
+
+class CLIPDisentangleModel(nn.Module):
+    def __init__(self):
+        super(CLIPDisentangleModel, self).__init__()
+        self.feature_extractor = FeatureExtractor()
+
+        self.domain_encoder = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU()
+        )
+
+        self.category_encoder = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU()
+        )
+
+        self.domain_classifier = nn.Linear(512, 2)
+        self.category_classifier = nn.Linear(512, 7)
+
+        self.reconstructor = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.ReLU()
+        )
+
+    def forward(self, x, is_train):
+        x = self.feature_extractor(x)
+        c_x = self.category_encoder(x)
+        d_x = self.domain_encoder(x)
+
+        if is_train:
+            fg = c_x + d_x
+            r_x = self.reconstructor(fg)
+            c_y = self.category_classifier(c_x)
+            d_y = self.domain_classifier(d_x)
+            a_c_y = self.category_classifier(d_x)
+            a_d_y = self.domain_classifier(c_x)
+            return x, r_x, c_y, d_y, a_c_y, a_d_y, d_x
+        else:
+            c_y = self.category_classifier(c_x)
+            d_y = self.domain_classifier(d_x)
+            return c_y

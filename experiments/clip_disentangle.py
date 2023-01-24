@@ -69,7 +69,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
 
         self.optimizer1.zero_grad()
 
-        print("-----------------------------")
+        #print("-----------------------------")
 
         if domain == 0:
             #images, labels, descriptions = data
@@ -95,11 +95,11 @@ class CLIPDisentangleExperiment: # See point 4. of the project
             tokenized_text = clip.tokenize(descriptions).to(self.device)
             text_features = self.clip_model.encode_text(tokenized_text)
             
-            print(text_features.size())
-            print(source_domain_features.size())
+            #print(text_features.size())
+            #print(source_domain_features.size())
             #clip_loss = self.l2loss(text_features, source_dom_outputs)
             clip_loss = torch.sqrt(self.mseloss_sum(text_features, source_domain_features))
-            print("clip_loss: ", clip_loss.item())
+            #print("clip_loss: ", clip_loss.item())
 
             total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss + clip_loss
             #print("total_loss: ", total_loss.item())
@@ -123,7 +123,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
             
             #clip_loss = self.l2loss(text_features, source_dom_outputs)
             clip_loss = torch.sqrt(self.mseloss_sum(text_features, target_domain_features))
-            print("clip_loss: ", clip_loss.item())
+            #print("clip_loss: ", clip_loss.item())
 
             total_loss = (target_dom_loss + target_adv_domC_loss) + target_adv_objC_loss + reconstruction_loss + clip_loss
             #print("total_loss: ", total_loss.item())

@@ -77,7 +77,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
                 descriptions = list(descriptions[0])
                 images = images.to(self.device)
                 labels = labels.to(self.device)
-                features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs, source_domain_features = self.model(images, True)
+                features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs, source_domain_features, target_domain_features = self.model(images, True)
                 source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
                 #print(f"source_class_loss: {source_class_loss.item()}")
                 source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size()[0], dtype = torch.long).to(self.device))
@@ -119,7 +119,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
                 images, labels = data
                 images = images.to(self.device)
                 labels = labels.to(self.device)
-                features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True)
+                features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs, _ = self.model(images, True)
                 source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
                 #print(f"source_class_loss: {source_class_loss.item()}")
                 source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size()[0], dtype = torch.long).to(self.device))
@@ -135,7 +135,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
             else:
                 images, _ = data
                 images = images.to(self.device)
-                features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs = self.model(images, True)
+                features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs, _ = self.model(images, True)
                 target_dom_loss = self.weights[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
                 reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
                 #print("reconstruction_loss: ",reconstruction_loss.item())
@@ -158,8 +158,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
         count = 0
         loss = 0
         with torch.no_grad():
-            for z, y in loader:
-                x, _ = z
+            for x, y in loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
 

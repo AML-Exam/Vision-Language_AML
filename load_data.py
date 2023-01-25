@@ -300,10 +300,10 @@ def build_splits_clip_disentangle(opt):
     ])
 
     # Dataloaders
-    source_train_loader = DataLoader(PACSDatasetClip(source_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
-    source_val_loader = DataLoader(PACSDatasetClip(source_val_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
-    target_train_loader = DataLoader(PACSDatasetClip(target_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
-    test_loader = DataLoader(PACSDatasetClip(test_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
+    source_train_loader = DataLoader(PACSDatasetBaseline(source_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
+    source_val_loader = DataLoader(PACSDatasetBaseline(source_val_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
+    target_train_loader = DataLoader(PACSDatasetBaseline(target_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
+    test_loader = DataLoader(PACSDatasetBaseline(test_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
     source_descriptions_train_loader = DataLoader(PACSDatasetClip(source_descriptions_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
     target_descriptions_train_loader = DataLoader(PACSDatasetClip(target_descriptions_train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
 

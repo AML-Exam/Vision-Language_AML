@@ -30,7 +30,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
         self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
         self.mseloss = torch.nn.MSELoss()
 
-        self.weights = [0.6, 0.3, 0.1]
+        self.weights = [0.6, 0.3, 0.1, 0.3]
 
     def save_checkpoint(self, path, iteration, best_accuracy, total_train_loss):
         checkpoint = {}
@@ -95,7 +95,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
             #print(text_features.size())
             #print(source_domain_features.size())
             #clip_loss = self.l2loss(text_features, source_dom_outputs)
-            clip_loss = self.mseloss(text_features, source_domain_features)
+            clip_loss = self.weights[3]*self.mseloss(text_features, source_domain_features)
             #print("clip_loss: ", clip_loss.item())
 
             total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss + clip_loss
@@ -119,7 +119,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
             text_features = self.clip_model.encode_text(tokenized_text)
             
             #clip_loss = self.l2loss(text_features, source_dom_outputs)
-            clip_loss = self.mseloss(text_features, target_domain_features)
+            clip_loss = self.weights[3]*self.mseloss(text_features, target_domain_features)
             #print("clip_loss: ", clip_loss.item())
 
             total_loss = (target_dom_loss + target_adv_domC_loss) + target_adv_objC_loss + reconstruction_loss + clip_loss

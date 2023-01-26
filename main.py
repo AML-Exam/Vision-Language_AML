@@ -2,33 +2,15 @@ import os
 import logging
 from parse_args import parse_arguments
 from load_data import build_splits_baseline, build_splits_domain_disentangle, build_splits_clip_disentangle
+from load_data_dg import build_splits_baseline_dg, build_splits_domain_disentangle_dg, build_splits_clip_disentangle_dg
 from experiments.baseline import BaselineExperiment
 from experiments.domain_disentangle import DomainDisentangleExperiment
 from experiments.clip_disentangle import CLIPDisentangleExperiment
 
-#def setup_experiment(opt):
-#    
-#    if opt['experiment'] == 'baseline':
-#        experiment = BaselineExperiment(opt)
-#        train_loader, validation_loader, test_loader = build_splits_baseline(opt)
-#        
-#    elif opt['experiment'] == 'domain_disentangle':
-#        experiment = DomainDisentangleExperiment(opt)
-#        source_train_loader, source_validation_loader, target_train_loader, target_validation_loader, test_loader = build_splits_domain_disentangle(opt)
-#
-#    elif opt['experiment'] == 'clip_disentangle':
-#        experiment = CLIPDisentangleExperiment(opt)
-#        train_loader, validation_loader, test_loader = build_splits_clip_disentangle(opt)
-#
-#    else:
-#        raise ValueError('Experiment not yet supported.')
-#    
-#    return experiment, train_loader, validation_loader, test_loader
-
 def main(opt):
     if opt['experiment'] == 'baseline':
         experiment = BaselineExperiment(opt)
-        train_loader, validation_loader, test_loader = build_splits_baseline(opt)
+        train_loader, validation_loader, test_loader = build_splits_baseline(opt) if not opt['dom_gen'] else build_splits_baseline_dg(opt)
     elif opt['experiment'] == 'domain_disentangle':
         experiment = DomainDisentangleExperiment(opt)
         source_train_loader, target_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle(opt)

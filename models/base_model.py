@@ -138,7 +138,6 @@ class DomainDisentangleModel(nn.Module):
             return x, r_x, c_y, d_y, a_c_y, a_d_y
         else:
             c_y = self.category_classifier(c_x)
-            d_y = self.domain_classifier(d_x)
             return c_y
         
         #if target_label != None: #?????
@@ -220,5 +219,4 @@ class CLIPDisentangleModel(nn.Module):
             return x, r_x, c_y, d_y, a_c_y, a_d_y, d_x
         else:
             c_y = self.category_classifier(c_x)
-            d_y = self.domain_classifier(d_x)
             return c_y

@@ -23,6 +23,7 @@ def parse_arguments():
     # Additional arguments can go below this line:
     #parser.add_argument('--test', type=str, default='some default value', help='some hint that describes the effect')
     parser.add_argument('--alpha', type=float, default=1, help='entropy loss weight')
+    parser.add_argument('--dom_gen', action='store_true', help='If set, the domain generalization variant is active.')
 
     # Build options dict
     opt = vars(parser.parse_args())

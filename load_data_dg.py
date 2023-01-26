@@ -135,3 +135,6 @@ def build_splits_domain_disentangle_dg(opt):
     test_loader = DataLoader(PACSDatasetBaseline(test_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
 
     return train_loader, val_loader, test_loader
+
+def build_splits_clip_disentangle_dg(opt):
+    return None

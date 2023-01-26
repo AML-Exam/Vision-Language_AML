@@ -13,7 +13,7 @@ def main(opt):
         train_loader, validation_loader, test_loader = build_splits_baseline(opt) if not opt['dom_gen'] else build_splits_baseline_dg(opt)
     elif opt['experiment'] == 'domain_disentangle':
         experiment = DomainDisentangleExperiment(opt)
-        source_train_loader, target_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle(opt)
+        source_train_loader, target_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle(opt) if not opt['dom_gen'] else build_splits_domain_disentangle_dg(opt)
     elif opt['experiment'] == 'clip_disentangle':
         experiment = CLIPDisentangleExperiment(opt)
         source_train_loader, target_train_loader, source_descriptions_train_loader, target_descriptions_train_loader, source_validation_loader, test_loader = build_splits_clip_disentangle(opt)
@@ -56,7 +56,7 @@ def main(opt):
                         if val_accuracy > best_accuracy:
                             best_accuracy = val_accuracy
                             experiment.save_checkpoint(f'{opt["output_path"]}/best_checkpoint.pth', iteration, best_accuracy, total_train_loss)
-                        experiment.save_checkpoint(f'{opt["output_path"]}/last_checkpoint.pth', iteration, best_accuracy, total_train_loss)
+                        experiment.save_checkpoint(f'{opt["output_path"]}/last_checkpoint.pth', iteration, val_accuracy, total_train_loss)
 
                     iteration += 1
                     if iteration > opt['max_iterations']:
@@ -65,7 +65,8 @@ def main(opt):
         elif opt['experiment'] == 'domain_disentangle':
 
             #source_train_loader_iterator = iter(source_train_loader)
-            target_train_loader_iterator = iter(target_train_loader)
+            if not opt['dom_gen']:
+                target_train_loader_iterator = iter(target_train_loader)
 
             # Train loop
             while iteration < opt['max_iterations']:
@@ -73,17 +74,19 @@ def main(opt):
                 #for target_data in target_train_loader:
                 for source_data in source_train_loader:
 
-                    try:
-                        #source_data = next(source_train_loader_iterator)
-                        target_data = next(target_train_loader_iterator)
-                    except StopIteration:
-                        #source_train_loader_iterator = iter(source_train_loader)
-                        #source_data = next(source_train_loader_iterator)
-                        target_train_loader_iterator = iter(target_train_loader)
-                        target_data = next(target_train_loader_iterator)
+                    if not opt['dom_gen']:
+                        try:
+                            #source_data = next(source_train_loader_iterator)
+                            target_data = next(target_train_loader_iterator)
+                        except StopIteration:
+                            #source_train_loader_iterator = iter(source_train_loader)
+                            #source_data = next(source_train_loader_iterator)
+                            target_train_loader_iterator = iter(target_train_loader)
+                            target_data = next(target_train_loader_iterator)
 
                     total_train_loss += experiment.train_iteration(source_data, 0)
-                    total_train_loss += experiment.train_iteration(target_data, 1)
+                    if not opt['dom_gen']:
+                        total_train_loss += experiment.train_iteration(target_data, 1)
 
                     if iteration % opt['print_every'] == 0:
                         logging.info(f'[TRAIN - {iteration}] Loss: {total_train_loss / (iteration + 1)}')
@@ -95,7 +98,7 @@ def main(opt):
                         if val_accuracy > best_accuracy:
                             best_accuracy = val_accuracy
                             experiment.save_checkpoint(f'{opt["output_path"]}/best_checkpoint.pth', iteration, best_accuracy, total_train_loss)
-                        experiment.save_checkpoint(f'{opt["output_path"]}/last_checkpoint.pth', iteration, best_accuracy, total_train_loss)
+                        experiment.save_checkpoint(f'{opt["output_path"]}/last_checkpoint.pth', iteration, val_accuracy, total_train_loss)
 
                     iteration += 1
                     if iteration > opt['max_iterations']:

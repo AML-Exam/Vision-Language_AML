@@ -6,27 +6,27 @@ import json
 
 DOMAINS = ['art_painting', 'cartoon', 'photo', 'sketch']
 
-#def read_lines(data_path, domain_name, dom_idx = None):
-#    examples = {}
-#    with open(f'{data_path}/{domain_name}.txt') as f:
-#        lines = f.readlines()
-#
-#    for line in lines: 
-#        line = line.strip().split()[0].split('/')
-#        category_name = line[3]
-#        category_idx = CATEGORIES[category_name]
-#        image_name = line[4]
-#        image_path = f'{data_path}/kfold/{domain_name}/{category_name}/{image_name}'
-#        if category_idx not in examples.keys():
-#            examples[category_idx] = [(image_path, dom_idx)]
-#        else:
-#            examples[category_idx].append((image_path, dom_idx))
-#    return examples
+def read_lines_dg(data_path, domain_name, dom_idx = None):
+    examples = {}
+    with open(f'{data_path}/{domain_name}.txt') as f:
+        lines = f.readlines()
+
+    for line in lines: 
+        line = line.strip().split()[0].split('/')
+        category_name = line[3]
+        category_idx = CATEGORIES[category_name]
+        image_name = line[4]
+        image_path = f'{data_path}/kfold/{domain_name}/{category_name}/{image_name}'
+        if category_idx not in examples.keys():
+            examples[category_idx] = [(image_path, dom_idx)]
+        else:
+            examples[category_idx].append((image_path, dom_idx))
+    return examples
 
 def build_splits_baseline_dg(opt):
     
     target_domain = opt['target_domain']
-    source_domains = DOMAINS.remove(opt['target_domain'])
+    source_domains = list(filter(lambda dom : dom != opt['target_domain'], DOMAINS))
 
     source_examples = {}
     for dom in source_domains:
@@ -83,11 +83,11 @@ def build_splits_baseline_dg(opt):
 def build_splits_domain_disentangle_dg(opt):
 
     target_domain = opt['target_domain']
-    source_domains = DOMAINS.remove(opt['target_domain'])
+    source_domains = list(filter(lambda dom : dom != opt['target_domain'], DOMAINS))
 
     source_examples = {}
     for dom_idx, dom in enumerate(source_domains):
-        tmp_examples = read_lines(opt['data_path'], dom)
+        tmp_examples = read_lines_dg(opt['data_path'], dom, dom_idx)
         for key in tmp_examples.keys():
             if key in source_examples:
                 source_examples[key].extend(tmp_examples[key])
@@ -130,8 +130,8 @@ def build_splits_domain_disentangle_dg(opt):
     ])
 
     # Dataloaders
-    train_loader = DataLoader(PACSDatasetBaseline(train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
-    val_loader = DataLoader(PACSDatasetBaseline(val_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
+    train_loader = DataLoader(PACSDatasetTuple(train_examples, train_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=True)
+    val_loader = DataLoader(PACSDatasetTuple(val_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
     test_loader = DataLoader(PACSDatasetBaseline(test_examples, eval_transform), batch_size=opt['batch_size'], num_workers=opt['num_workers'], shuffle=False)
 
     return train_loader, val_loader, test_loader

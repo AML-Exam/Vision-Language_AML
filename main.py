@@ -22,7 +22,7 @@ def main(opt):
         if not opt['dom_gen']:
             source_train_loader, target_train_loader, source_descriptions_train_loader, target_descriptions_train_loader, source_validation_loader, test_loader = build_splits_clip_disentangle(opt)
         else:
-            source_train_loader, source_validation_loader, test_loader, source_descriptions_train_loader= build_splits_clip_disentangle(opt)
+            source_train_loader, source_validation_loader, test_loader, source_descriptions_train_loader= build_splits_clip_disentangle_dg(opt)
     else:
         raise ValueError('Experiment not yet supported.')
 

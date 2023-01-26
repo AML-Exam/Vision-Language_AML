@@ -90,10 +90,10 @@ class DomainDisentangleExperiment: # See point 2. of the project
             images, dom_labels = examples
             images = images.to(self.device)
             labels = labels.to(self.device)
-            dom_lables = dom_labels.to(self.device)
+            dom_labels = dom_labels.to(self.device)
             features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True, True)
             source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
-            source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, dom_lables)
+            source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, dom_labels)
             reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
             source_adv_domC_loss = self.weights[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
             source_adv_objC_loss = self.weights[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
@@ -110,12 +110,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         count = 0
         loss = 0
         with torch.no_grad():
-            for z, y in loader:
-                if not self.opt['dom_gen']:
-                    x = z
-                else:
-                    x, _ = z
-
+            for x, y in loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
 

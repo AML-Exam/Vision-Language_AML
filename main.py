@@ -19,7 +19,10 @@ def main(opt):
             source_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle_dg(opt)
     elif opt['experiment'] == 'clip_disentangle':
         experiment = CLIPDisentangleExperiment(opt)
-        source_train_loader, target_train_loader, source_descriptions_train_loader, target_descriptions_train_loader, source_validation_loader, test_loader = build_splits_clip_disentangle(opt)
+        if not opt['dom_gen']:
+            source_train_loader, target_train_loader, source_descriptions_train_loader, target_descriptions_train_loader, source_validation_loader, test_loader = build_splits_clip_disentangle(opt)
+        else:
+            source_train_loader, source_validation_loader, test_loader, source_descriptions_train_loader= build_splits_clip_disentangle(opt)
     else:
         raise ValueError('Experiment not yet supported.')
 
@@ -110,8 +113,9 @@ def main(opt):
         elif opt['experiment'] == 'clip_disentangle':
 
             #source_train_loader_iterator = iter(source_train_loader)
-            target_train_loader_iterator = iter(target_train_loader)
-            target_descriptions_train_loader_iterator = iter(target_descriptions_train_loader)
+            if not opt['dom_gen']:
+                target_train_loader_iterator = iter(target_train_loader)
+                target_descriptions_train_loader_iterator = iter(target_descriptions_train_loader)
             source_descriptions_train_loader_iterator = iter(source_descriptions_train_loader)
 
             # Train loop
@@ -120,31 +124,32 @@ def main(opt):
                 #for target_data in target_train_loader:
                 for source_data in source_train_loader:
 
-                    try:
-                        target_data = next(target_train_loader_iterator)
-                    except StopIteration:
-                        target_train_loader_iterator = iter(target_train_loader)
-                        target_data = next(target_train_loader_iterator)
+                    if not opt['dom_gen']:
+                        try:
+                            target_data = next(target_train_loader_iterator)
+                        except StopIteration:
+                            target_train_loader_iterator = iter(target_train_loader)
+                            target_data = next(target_train_loader_iterator)
 
-                    try:
-                        target_descriptions_data = next(target_descriptions_train_loader_iterator)
-                    except StopIteration:
-                        target_descriptions_train_loader_iterator = iter(target_descriptions_train_loader)
-                        target_descriptions_data = next(target_descriptions_train_loader_iterator)
+                        try:
+                            target_descriptions_data = next(target_descriptions_train_loader_iterator)
+                        except StopIteration:
+                            target_descriptions_train_loader_iterator = iter(target_descriptions_train_loader)
+                            target_descriptions_data = next(target_descriptions_train_loader_iterator)
 
                     try:
                         source_descriptions_data = next(source_descriptions_train_loader_iterator)
                     except StopIteration:
                         source_descriptions_train_loader_iterator = iter(source_descriptions_train_loader)
                         source_descriptions_data = next(source_descriptions_train_loader_iterator)
-
+                     
                     if len(source_data[0]) != 1:
                         total_train_loss += experiment.train_iteration(source_data, 0, 0)
-                    if len(target_data[0]) != 1:
+                    if not opt['dom_gen'] and len(target_data[0]) != 1:
                         total_train_loss += experiment.train_iteration(target_data, 1, 0)
                     if len(source_descriptions_data[0]) != 1:
                         total_train_loss += experiment.train_iteration(source_descriptions_data, 0, 1)
-                    if len(target_descriptions_data[0]) != 1:
+                    if not opt['dom_gen'] and len(target_descriptions_data[0]) != 1:
                         total_train_loss += experiment.train_iteration(target_descriptions_data, 1, 1)
 
                     if iteration % opt['print_every'] == 0:

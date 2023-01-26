@@ -67,90 +67,96 @@ class CLIPDisentangleExperiment: # See point 4. of the project
 
         self.optimizer1.zero_grad()
 
-        #print("-----------------------------")
-
-        if desc == 1:
-            descriptions = []
-            if domain == 0:
+        if not self.opt['dom_gen']:
+            if desc == 1:
+                descriptions = []
+                if domain == 0:
+                    examples, labels = data
+                    images, descriptions = examples
+                    descriptions = list(descriptions[0])
+                    images = images.to(self.device)
+                    labels = labels.to(self.device)
+                    features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs, source_domain_features = self.model(images, True)
+                    source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
+                    source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size()[0], dtype = torch.long).to(self.device))
+                    reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
+                    source_adv_domC_loss = self.weights[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
+                    source_adv_objC_loss = self.weights[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
+                    tokenized_text = clip.tokenize(descriptions).to(self.device)
+                    text_features = self.clip_model.encode_text(tokenized_text)
+                    clip_loss = self.weights[3]*self.mseloss(text_features, source_domain_features)
+                    total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss + clip_loss
+                else:
+                    examples, _ = data
+                    images, descriptions = examples
+                    descriptions = list(descriptions[0])
+                    images = images.to(self.device)
+                    features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs, target_domain_features = self.model(images, True)
+                    target_dom_loss = self.weights[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
+                    reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
+                    target_adv_domC_loss =  self.weights[0]*self.opt["alpha"]*self.entropyLoss(target_adv_domC_outputs)
+                    target_adv_objC_loss = self.weights[1]*self.opt['alpha']*self.entropyLoss(target_adv_objC_outputs)
+                    tokenized_text = clip.tokenize(descriptions).to(self.device)
+                    text_features = self.clip_model.encode_text(tokenized_text)
+                    clip_loss = self.weights[3]*self.mseloss(text_features, target_domain_features)
+                    total_loss = (target_dom_loss + target_adv_domC_loss) + target_adv_objC_loss + reconstruction_loss + clip_loss
+            else:
+                if domain == 0:
+                    images, labels = data
+                    images = images.to(self.device)
+                    labels = labels.to(self.device)
+                    features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs, _ = self.model(images, True)
+                    source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
+                    source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size()[0], dtype = torch.long).to(self.device))
+                    reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
+                    source_adv_domC_loss = self.weights[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
+                    source_adv_objC_loss = self.weights[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
+                    total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss
+                else:
+                    images, _ = data
+                    images = images.to(self.device)
+                    features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs, _ = self.model(images, True)
+                    target_dom_loss = self.weights[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
+                    reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
+                    target_adv_domC_loss =  self.weights[0]*self.opt["alpha"]*self.entropyLoss(target_adv_domC_outputs)
+                    target_adv_objC_loss = self.weights[1]*self.opt['alpha']*self.entropyLoss(target_adv_objC_outputs)
+                    total_loss = (target_dom_loss + target_adv_domC_loss) + target_adv_objC_loss + reconstruction_loss
+        else:
+            if desc == 1:
+                descriptions = []
                 examples, labels = data
-                images, descriptions = examples
+                images, dom_labels, descriptions = examples
                 descriptions = list(descriptions[0])
                 images = images.to(self.device)
+                dom_labels = dom_labels.to(self.device)
                 labels = labels.to(self.device)
                 features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs, source_domain_features = self.model(images, True)
                 source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
-                #print(f"source_class_loss: {source_class_loss.item()}")
-                source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size()[0], dtype = torch.long).to(self.device))
-                #print("source_dom_loss: ",source_dom_loss.item())
+                source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, dom_labels)
                 reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
-                #print("reconstruction_loss: ",reconstruction_loss.item())
                 source_adv_domC_loss = self.weights[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
                 source_adv_objC_loss = self.weights[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
-                #print("source_adv_domC_loss: ",source_adv_domC_loss.item())
-                #print("source_adv_objC_loss: ",source_adv_objC_loss.item())
                 tokenized_text = clip.tokenize(descriptions).to(self.device)
                 text_features = self.clip_model.encode_text(tokenized_text)
                 clip_loss = self.weights[3]*self.mseloss(text_features, source_domain_features)
-                #print("clip_loss: ", clip_loss.item())
                 total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss + clip_loss
-                #print("total_loss: ", total_loss.item())
             else:
-                examples, _ = data
-                images, descriptions = examples
-                descriptions = list(descriptions[0])
+                examples, labels = data
+                images, dom_labels = examples
                 images = images.to(self.device)
-                features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs, target_domain_features = self.model(images, True)
-                target_dom_loss = self.weights[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
-                reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
-                #print("reconstruction_loss: ",reconstruction_loss.item())
-                target_adv_domC_loss =  self.weights[0]*self.opt["alpha"]*self.entropyLoss(target_adv_domC_outputs)
-                target_adv_objC_loss = self.weights[1]*self.opt['alpha']*self.entropyLoss(target_adv_objC_outputs)
-                #print("target_dom_loss: ",target_dom_loss.item())
-                #print("target_adv_domC_loss: ",target_adv_domC_loss.item())
-                #print("target_adv_objC_loss: ",target_adv_objC_loss.item())
-                tokenized_text = clip.tokenize(descriptions).to(self.device)
-                text_features = self.clip_model.encode_text(tokenized_text)
-                clip_loss = self.weights[3]*self.mseloss(text_features, target_domain_features)
-                #print("clip_loss: ", clip_loss.item())
-                total_loss = (target_dom_loss + target_adv_domC_loss) + target_adv_objC_loss + reconstruction_loss + clip_loss
-                #print("total_loss: ", total_loss.item())
-        else:
-            if domain == 0:
-                images, labels = data
-                images = images.to(self.device)
+                dom_labels = dom_labels.to(self.device)
                 labels = labels.to(self.device)
                 features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs, _ = self.model(images, True)
                 source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
-                #print(f"source_class_loss: {source_class_loss.item()}")
-                source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size()[0], dtype = torch.long).to(self.device))
-                #print("source_dom_loss: ",source_dom_loss.item())
+                source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, dom_labels)
                 reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
-                #print("reconstruction_loss: ",reconstruction_loss.item())
                 source_adv_domC_loss = self.weights[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
                 source_adv_objC_loss = self.weights[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
-                #print("source_adv_domC_loss: ",source_adv_domC_loss.item())
-                #print("source_adv_objC_loss: ",source_adv_objC_loss.item())
                 total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss
-                #print("total_loss: ", total_loss.item())
-            else:
-                images, _ = data
-                images = images.to(self.device)
-                features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs, _ = self.model(images, True)
-                target_dom_loss = self.weights[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
-                reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
-                #print("reconstruction_loss: ",reconstruction_loss.item())
-                target_adv_domC_loss =  self.weights[0]*self.opt["alpha"]*self.entropyLoss(target_adv_domC_outputs)
-                target_adv_objC_loss = self.weights[1]*self.opt['alpha']*self.entropyLoss(target_adv_objC_outputs)
-                #print("target_dom_loss: ",target_dom_loss.item())
-                #print("target_adv_domC_loss: ",target_adv_domC_loss.item())
-                #print("target_adv_objC_loss: ",target_adv_objC_loss.item())
-                total_loss = (target_dom_loss + target_adv_domC_loss) + target_adv_objC_loss + reconstruction_loss
-                #print("total_loss: ", total_loss.item())
         
         total_loss.backward()
         self.optimizer1.step()
         return total_loss.item()
-        #raise NotImplementedError('[TODO] Implement DomainDisentangleExperiment.')
 
     def validate(self, loader):
         self.model.eval()
@@ -173,29 +179,3 @@ class CLIPDisentangleExperiment: # See point 4. of the project
         mean_loss = loss / count
         self.model.train()
         return mean_accuracy, mean_loss
-
-        #raise NotImplementedError('[TODO] Implement DomainDisentangleExperiment.')
-
-
-
-
-
-        #if obj_label != None:
-        #    obj_label = obj_label.to(self.device) #to be tested
-        #dom_label = dom_label.to(self.device)
-
-        #features, obj_class, dom_class, recon_feat, adv_dom_to_obj_class, adv_obj_to_dom_class = self.model(image, obj_label)
-        #
-        #if obj_label != None:
-        #    celoss_obj = self.criterion(obj_class, obj_label)
-        #    eloss_dom_to_obj = - self.criterion(adv_dom_to_obj_class, obj_label)
-        #else:
-        #    celoss_obj = 0
-        #    eloss_dom_to_obj = 0
-        #celoss_dom = self.criterion(dom_class, dom_label)
-        #eloss_obj_to_dom = - self.criterion(adv_obj_to_dom_class, dom_label)
-        #
-        ##recontructor loss
-        #rec_loss = self.mseloss(recon_feat, features) + self.kldiv(recon_feat, features)
-#
-        #total_loss = celoss_obj + celoss_dom + eloss_dom_to_obj + eloss_obj_to_dom + rec_loss

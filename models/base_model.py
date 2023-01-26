@@ -195,6 +195,7 @@ class CLIPDisentangleModel(nn.Module):
             nn.ReLU()
         )
 
+        self.domain_classifier_dg = nn.Linear(512, 3)
         self.domain_classifier = nn.Linear(512, 2)
         self.category_classifier = nn.Linear(512, 7)
 
@@ -209,7 +210,7 @@ class CLIPDisentangleModel(nn.Module):
             nn.ReLU()
         )
 
-    def forward(self, x, is_train):
+    def forward(self, x, is_train, dg=False):
         x = self.feature_extractor(x)
         c_x = self.category_encoder(x)
         d_x = self.domain_encoder(x)
@@ -218,7 +219,10 @@ class CLIPDisentangleModel(nn.Module):
             fg = c_x + d_x
             r_x = self.reconstructor(fg)
             c_y = self.category_classifier(c_x)
-            d_y = self.domain_classifier(d_x)
+            if not dg:
+                d_y = self.domain_classifier(d_x)
+            else:
+                d_y = self.domain_classifier_dg(d_x)
             a_c_y = self.category_classifier(d_x)
             a_d_y = self.domain_classifier(c_x)
             return x, r_x, c_y, d_y, a_c_y, a_d_y, d_x

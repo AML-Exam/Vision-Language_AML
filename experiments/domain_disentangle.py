@@ -9,7 +9,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         self.device = torch.device('cpu' if opt['cpu'] else 'cuda:0')
 
         # Setup model
-        self.model = DomainDisentangleModel(opt)
+        self.model = DomainDisentangleModel()
         self.model.train()
         self.model.to(self.device)
         for param in self.model.parameters():
@@ -115,7 +115,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
                     x = z
                 else:
                     x, _ = z
-                    
+
                 x = x.to(self.device)
                 y = y.to(self.device)
 

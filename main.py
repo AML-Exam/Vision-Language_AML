@@ -13,7 +13,10 @@ def main(opt):
         train_loader, validation_loader, test_loader = build_splits_baseline(opt) if not opt['dom_gen'] else build_splits_baseline_dg(opt)
     elif opt['experiment'] == 'domain_disentangle':
         experiment = DomainDisentangleExperiment(opt)
-        source_train_loader, target_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle(opt) if not opt['dom_gen'] else build_splits_domain_disentangle_dg(opt)
+        if not opt['dom_gen']:
+            source_train_loader, target_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle(opt)
+        else:    
+            source_train_loader, source_validation_loader, test_loader = build_splits_domain_disentangle_dg(opt)
     elif opt['experiment'] == 'clip_disentangle':
         experiment = CLIPDisentangleExperiment(opt)
         source_train_loader, target_train_loader, source_descriptions_train_loader, target_descriptions_train_loader, source_validation_loader, test_loader = build_splits_clip_disentangle(opt)

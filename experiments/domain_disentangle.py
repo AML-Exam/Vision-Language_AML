@@ -27,7 +27,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         self.mseloss = torch.nn.MSELoss()
         self.kldivloss = torch.nn.KLDivLoss(reduction="batchmean")
 
-        self.weights = [0.6, 0.3, 0.1]
+        self.weights = [10,5,1]
 
     def save_checkpoint(self, path, iteration, best_accuracy, total_train_loss):
         checkpoint = {}

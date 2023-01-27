@@ -30,7 +30,7 @@ class CLIPDisentangleExperiment: # See point 4. of the project
         self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
         self.mseloss = torch.nn.MSELoss()
 
-        self.weights = [0.6, 0.3, 0.1, 0.3]
+        self.weights = [10,5,1,1]
 
     def save_checkpoint(self, path, iteration, best_accuracy, total_train_loss):
         checkpoint = {}

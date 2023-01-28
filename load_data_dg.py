@@ -6,6 +6,7 @@ import json
 
 DOMAINS = ['art_painting', 'cartoon', 'photo', 'sketch']
 
+# Application of transforms
 class PACSDatasetTupleDg(Dataset):
     def __init__(self, examples, transform):
         self.examples = examples
@@ -19,6 +20,7 @@ class PACSDatasetTupleDg(Dataset):
         x = self.transform(Image.open(example[0]).convert('RGB'))
         return (x, example[1], example[2]), y
 
+# Read the paths of images and prepare a dictionary category id - [(image paths, domain ids)]
 def read_lines_dg(data_path, domain_name, dom_idx = None):
     examples = {}
     with open(f'{data_path}/{domain_name}.txt') as f:
@@ -36,6 +38,7 @@ def read_lines_dg(data_path, domain_name, dom_idx = None):
             examples[category_idx].append((image_path, dom_idx))
     return examples
 
+# Read the paths of images and prepare a dictionary category id - [(image paths, domain ids, descriptions)]
 def read_lines_clip_dg(data_path, domain_name, dom_idx, with_desc):
     examples = {}
     
@@ -73,6 +76,7 @@ def build_splits_baseline_dg(opt):
     target_domain = opt['target_domain']
     source_domains = list(filter(lambda dom : dom != target_domain, DOMAINS))
 
+    # Acquiring data from all the domains
     source_examples = {}
     for dom in source_domains:
         tmp_examples = read_lines(opt['data_path'], dom)
@@ -130,7 +134,9 @@ def build_splits_domain_disentangle_dg(opt):
     target_domain = opt['target_domain']
     source_domains = list(filter(lambda dom : dom != target_domain, DOMAINS))
 
+    # Acquiring data from all the domains
     source_examples = {}
+    # Generate domain labels enumerating source_domains
     for dom_idx, dom in enumerate(source_domains):
         tmp_examples = read_lines_dg(opt['data_path'], dom, dom_idx)
         for key in tmp_examples.keys():
@@ -186,8 +192,10 @@ def build_splits_clip_disentangle_dg(opt):
     target_domain = opt['target_domain']
     source_domains = list(filter(lambda dom : dom != target_domain, DOMAINS))
 
+    # Acquiring data from all the domains, separately for images with and without descriptions
     source_examples = {}
     source_examples_descriptions = {}
+    # Generate domain labels enumerating source_domains
     for dom_idx, dom in enumerate(source_domains):
         tmp_examples = read_lines_clip_dg(opt['data_path'], dom, dom_idx, 0)
         for key in tmp_examples.keys():

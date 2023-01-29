@@ -16,7 +16,8 @@ class BaselineExperiment: # See point 1. of the project
             param.requires_grad = True
 
         # Setup optimization procedure
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
+        #self.optimizer = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=opt['lr'])
         self.criterion = torch.nn.CrossEntropyLoss()
 
     def save_checkpoint(self, path, iteration, best_accuracy, total_train_loss):

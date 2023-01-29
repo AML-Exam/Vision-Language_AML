@@ -16,7 +16,8 @@ class DomainDisentangleExperiment: # See point 2. of the project
             param.requires_grad = True
         
         # Setup optimization procedure
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
+        #self.optimizer = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=opt['lr'])
         self.crossEntropyLoss = torch.nn.CrossEntropyLoss()
         self.logSoftmax = torch.nn.LogSoftmax(dim=1)
         # Entropy loss following Shannon Entropy definition

@@ -1,6 +1,5 @@
 import torch
 from models.base_model import DomainDisentangleModel
-from itertools import chain
 
 class DomainDisentangleExperiment: # See point 2. of the project
     
@@ -15,18 +14,20 @@ class DomainDisentangleExperiment: # See point 2. of the project
         self.model.to(self.device)
         for param in self.model.parameters():
             param.requires_grad = True
-
-        self.parameters2 = list(self.model.category_encoder.parameters()) + list(self.model.domain_encoder.parameters()) + list(self.model.feature_extractor.parameters()) + list(self.model.reconstructor.parameters())
         
         # Setup optimization procedure
-        # forse possiamo usare il gradient descend
-        self.optimizer1 = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
-        self.optimizer2 = torch.optim.Adam(self.parameters2, lr=opt['lr'])
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=opt['lr'])
         self.crossEntropyLoss = torch.nn.CrossEntropyLoss()
         self.logSoftmax = torch.nn.LogSoftmax(dim=1)
+        # Entropy loss following Shannon Entropy definition
         self.entropyLoss = lambda outputs : -torch.mean(torch.sum(self.logSoftmax(outputs), dim=1))
         self.mseloss = torch.nn.MSELoss()
-        self.kldivloss = torch.nn.KLDivLoss(reduction="batchmean")
+
+        # Setting weights for loss functions
+        # weights[0] => category classifier loss
+        # weights[1] => domain classifier loss
+        # weights[2] => reconstruction loss
+        self.weights = [10,5,1]
 
     def save_checkpoint(self, path, iteration, best_accuracy, total_train_loss):
         checkpoint = {}
@@ -36,8 +37,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
         checkpoint['total_train_loss'] = total_train_loss
 
         checkpoint['model'] = self.model.state_dict()
-        checkpoint['optimizer1'] = self.optimizer1.state_dict()
-        checkpoint['optimizer2'] = self.optimizer2.state_dict()
+        checkpoint['optimizer'] = self.optimizer.state_dict()
 
         torch.save(checkpoint, path)
 
@@ -49,69 +49,76 @@ class DomainDisentangleExperiment: # See point 2. of the project
         total_train_loss = checkpoint['total_train_loss']
 
         self.model.load_state_dict(checkpoint['model'])
-        self.optimizer1.load_state_dict(checkpoint['optimizer1'])
-        self.optimizer2.load_state_dict(checkpoint['optimizer2'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
 
         return iteration, best_accuracy, total_train_loss
 
-    def train_iteration(self, target, source):
-        target_images, _ = target
-        source_images, source_labels = source
-
-        target_images = target_images.to(self.device)
-        source_images = source_images.to(self.device)
-        source_labels = source_labels.to(self.device)
-
-        self.optimizer1.zero_grad()
-        self.optimizer2.zero_grad()
-
-        # 0 is source domain, 1 is target domain
-
-        print("-----------------------------")
-        ## Direct part
-        # Source path
-        source_class_outputs, source_dom_outputs, features, rec_features = self.model(source_images, 0)
-        source_class_loss = self.crossEntropyLoss(source_class_outputs, source_labels)
-        print(f"source_class_loss: {source_class_loss.item()}")
-        source_dom_loss = self.crossEntropyLoss(source_dom_outputs, torch.zeros(self.opt['batch_size'], dtype = torch.long).to(self.device))
-        print("source_dom_loss: ",source_dom_loss.item())
-        reconstruction_loss = self.mseloss(rec_features, features)# + self.kldivloss(rec_features, features)
-        print("reconstruction_loss: ",reconstruction_loss.item())
-        source_partial_loss = source_class_loss + source_dom_loss + reconstruction_loss
-        source_partial_loss.backward()
-        # Target path
-        target_dom_outputs, features, rec_features = self.model(target_images, 1)
-        target_dom_loss = self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
-        print("target_dom_loss: ",target_dom_loss.item())
-        reconstruction_loss = self.mseloss(rec_features, features) #+ self.kldivloss(rec_features, features)
-        print("reconstruction_loss: ",reconstruction_loss.item())
-        target_partial_loss = target_dom_loss + reconstruction_loss
-        target_partial_loss.backward()
-
-        self.optimizer1.step()
-
-        ## Adversarial part
-        # Source adv path
-        source_adv_domC_outputs, source_adv_objC_outputs = self.model(source_images, 0, self.opt['alpha'])
-        source_adv_domC_loss = -self.entropyLoss(source_adv_domC_outputs)
-        print("source_adv_domC_loss: ",source_adv_domC_loss.item())
-        source_adv_objC_loss = -self.entropyLoss(source_adv_objC_outputs)
-        print("source_adv_objC_loss: ",source_adv_objC_loss.item())
-        source_adv_partial_loss = self.opt['alpha']*(source_adv_domC_loss + source_adv_objC_loss)
-        source_adv_partial_loss.backward()
-        # Target adv path
-        target_adv_domC_outputs = self.model(target_images, 1, self.opt['alpha'])
-        target_adv_domC_loss =  self.opt['alpha']*-self.entropyLoss(target_adv_domC_outputs)
-        print("target_adv_domC_loss: ",target_adv_domC_loss.item())
-        target_adv_domC_loss.backward()
-
-        self.optimizer2.step()
-
-        print(source_partial_loss.item(), " ", target_partial_loss.item(), " ", source_adv_partial_loss.item(), " ", target_adv_domC_loss.item())
-        total_loss = source_partial_loss + target_partial_loss + -source_adv_partial_loss + -target_adv_domC_loss
+    def train_iteration(self, data, domain): 
+        # domain == 0 -> source
+        # domain == 1 -> target
         
+        images = []
+        labels = []
+
+        self.optimizer.zero_grad()
+
+        if not self.opt['dom_gen']:
+            if domain == 0:
+                images, labels = data
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+                # Network outputs
+                features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True)
+                source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
+                # Computing cross entropy loss with tensor of labels 0 (source batch)
+                source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, torch.zeros(source_dom_outputs.size()[0], dtype = torch.long).to(self.device))
+                reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
+                # Adversarial losses: 
+                # category features -> domain classifier
+                source_adv_domC_loss = self.weights[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
+                # domain features -> category classifier
+                source_adv_objC_loss = self.weights[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
+                # Total loss summing all the computed partial losses
+                total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss
+            else:
+                images, _ = data
+                images = images.to(self.device)
+                # Network outputs
+                features, rec_features, _ , target_dom_outputs, target_adv_objC_outputs, target_adv_domC_outputs = self.model(images, True)
+                # Computing cross entropy loss with tensor of labels 1 (target batch)
+                target_dom_loss = self.weights[0]*self.crossEntropyLoss(target_dom_outputs, torch.ones(target_dom_outputs.size()[0], dtype = torch.long).to(self.device))
+                reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
+                # Adversarial losses: 
+                # category features -> domain classifier
+                target_adv_domC_loss =  self.weights[0]*self.opt["alpha"]*self.entropyLoss(target_adv_domC_outputs)
+                # domain features -> category classifier
+                target_adv_objC_loss = self.weights[1]*self.opt['alpha']*self.entropyLoss(target_adv_objC_outputs)
+                # Total loss summing all the computed partial losses
+                total_loss = (target_dom_loss + target_adv_domC_loss) + target_adv_objC_loss + reconstruction_loss
+        else:
+            examples, labels = data
+            images, dom_labels = examples
+            images = images.to(self.device)
+            labels = labels.to(self.device)
+            dom_labels = dom_labels.to(self.device)
+            # Network outputs
+            features, rec_features, source_class_outputs, source_dom_outputs, source_adv_objC_outputs, source_adv_domC_outputs = self.model(images, True, True)
+            source_class_loss = self.weights[0]*self.crossEntropyLoss(source_class_outputs, labels)
+            # Computing cross entropy loss with tensor of domain labels
+            source_dom_loss = self.weights[1]*self.crossEntropyLoss(source_dom_outputs, dom_labels)
+            reconstruction_loss = self.weights[2]*self.mseloss(rec_features, features)
+            # Adversarial losses: 
+            # category features -> domain classifier
+            source_adv_domC_loss = self.weights[0]*self.opt["alpha"]*self.entropyLoss(source_adv_domC_outputs)
+            # domain features -> category classifier
+            source_adv_objC_loss = self.weights[1]*self.opt["alpha"]*self.entropyLoss(source_adv_objC_outputs)
+            # Total loss summing all the computed partial losses
+            total_loss = (source_class_loss + source_adv_domC_loss) + (source_dom_loss + source_adv_objC_loss) + reconstruction_loss
+        
+        
+        total_loss.backward()
+        self.optimizer.step()
         return total_loss.item()
-        #raise NotImplementedError('[TODO] Implement DomainDisentangleExperiment.')
 
     def validate(self, loader):
         self.model.eval()
@@ -123,7 +130,7 @@ class DomainDisentangleExperiment: # See point 2. of the project
                 x = x.to(self.device)
                 y = y.to(self.device)
 
-                logits = self.model(x, 0)[0]
+                logits = self.model(x, False)
                 loss += self.crossEntropyLoss(logits, y)
                 pred = torch.argmax(logits, dim=-1)
 
@@ -134,29 +141,3 @@ class DomainDisentangleExperiment: # See point 2. of the project
         mean_loss = loss / count
         self.model.train()
         return mean_accuracy, mean_loss
-
-        #raise NotImplementedError('[TODO] Implement DomainDisentangleExperiment.')
-
-
-
-
-
-        #if obj_label != None:
-        #    obj_label = obj_label.to(self.device) #to be tested
-        #dom_label = dom_label.to(self.device)
-
-        #features, obj_class, dom_class, recon_feat, adv_dom_to_obj_class, adv_obj_to_dom_class = self.model(image, obj_label)
-        #
-        #if obj_label != None:
-        #    celoss_obj = self.criterion(obj_class, obj_label)
-        #    eloss_dom_to_obj = - self.criterion(adv_dom_to_obj_class, obj_label)
-        #else:
-        #    celoss_obj = 0
-        #    eloss_dom_to_obj = 0
-        #celoss_dom = self.criterion(dom_class, dom_label)
-        #eloss_obj_to_dom = - self.criterion(adv_obj_to_dom_class, dom_label)
-        #
-        ##recontructor loss
-        #rec_loss = self.mseloss(recon_feat, features) + self.kldiv(recon_feat, features)
-#
-        #total_loss = celoss_obj + celoss_dom + eloss_dom_to_obj + eloss_obj_to_dom + rec_loss

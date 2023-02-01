@@ -8,7 +8,7 @@ def parse_arguments():
 
     parser.add_argument('--target_domain', type=str, default='cartoon', choices=['art_painting', 'cartoon', 'sketch', 'photo'])
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate.')
-    parser.add_argument('--max_iterations', type=int, default=5000, help='Number of training iterations.')
+    parser.add_argument('--max_iterations', type=int, default=1000, help='Number of training iterations.')
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--print_every', type=int, default=50)
@@ -21,8 +21,8 @@ def parse_arguments():
     parser.add_argument('--test', action='store_true', help='If set, the experiment will skip training.')
     
     # Additional arguments can go below this line:
-    #parser.add_argument('--test', type=str, default='some default value', help='some hint that describes the effect')
-    parser.add_argument('--alpha', type=float, default=1, help='entropy loss weight')
+    parser.add_argument('--alpha', type=float, default=1, help='Entropy loss weight')
+    parser.add_argument('--dom_gen', action='store_true', help='If set, the domain generalization variant is active.')
 
     # Build options dict
     opt = vars(parser.parse_args())

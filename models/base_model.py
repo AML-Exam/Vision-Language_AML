@@ -51,6 +51,82 @@ class DomainDisentangleModel(nn.Module):
     def __init__(self):
         super(DomainDisentangleModel, self).__init__()
         self.feature_extractor = FeatureExtractor()
+        
+        self.domain_encoder = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU()
+        )
+
+        self.category_encoder = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU()
+        )
+
+        self.domain_classifier_dg = nn.Linear(512, 3)
+        self.domain_classifier = nn.Linear(512, 2)
+        self.category_classifier = nn.Linear(512, 7)
+
+        self.reconstructor = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.ReLU()
+        )
+
+    def forward(self, x, is_train, dg=False):
+        # x = feature, y classification result
+        # c = category, d = domain
+        # a = adversarial
+
+        x = self.feature_extractor(x)
+        c_x = self.category_encoder(x)
+        d_x = self.domain_encoder(x)
+
+        # is_train = discriminate between train and evaluation
+        # dg = specify if domain generalization flag is set
+        if is_train:
+            fg = c_x + d_x
+            r_x = self.reconstructor(fg)
+            c_y = self.category_classifier(c_x)
+            if not dg:
+                d_y = self.domain_classifier(d_x)
+            else:
+                d_y = self.domain_classifier_dg(d_x)
+            # Giving domain encoded features to category classifier (adversarial)
+            a_c_y = self.category_classifier(d_x)
+            # Giving category encoded features to domain classifier (adversarial)
+            a_d_y = self.domain_classifier(c_x)
+            return x, r_x, c_y, d_y, a_c_y, a_d_y
+        else:
+            c_y = self.category_classifier(c_x)
+            return c_y
+
+class CLIPDisentangleModel(nn.Module):
+    def __init__(self):
+        super(CLIPDisentangleModel, self).__init__()
+        self.feature_extractor = FeatureExtractor()
 
         self.domain_encoder = nn.Sequential(
             nn.Linear(512, 512),
@@ -80,64 +156,45 @@ class DomainDisentangleModel(nn.Module):
             nn.ReLU()
         )
 
+        self.domain_classifier_dg = nn.Linear(512, 3)
         self.domain_classifier = nn.Linear(512, 2)
         self.category_classifier = nn.Linear(512, 7)
-
-        ##
-        #self.cv = nn.Conv1d(2,1,2)
 
         self.reconstructor = nn.Sequential(
             nn.Linear(512, 512),
             nn.ReLU(),
 
             nn.Linear(512, 512),
+            nn.ReLU(),
+
+            nn.Linear(512, 512),
+            nn.ReLU()
         )
 
-    def forward(self, x, domain_label, alpha = None):
+    def forward(self, x, is_train, dg=False):
         # x = feature, y classification result
         # c = category, d = domain
+        # a = adversarial
+
         x = self.feature_extractor(x)
         c_x = self.category_encoder(x)
         d_x = self.domain_encoder(x)
 
-        if alpha == None:
-            ## convolute the concatenated c_x and d_x
-            #fg = self.cv(torch.cat((c_x,d_x),0))
+        # is_train = discriminate between train and evaluation
+        # dg = specify if domain generalization flag is set
+        if is_train:
             fg = c_x + d_x
             r_x = self.reconstructor(fg)
-
-        # domain_label 0 => source, domain_label 1 => target
-        if domain_label == 0:
-            if alpha == None:
-                c_y = self.category_classifier(c_x)
+            c_y = self.category_classifier(c_x)
+            if not dg:
                 d_y = self.domain_classifier(d_x)
-                return c_y, d_y, x, r_x
             else:
-                a_c_y = self.category_classifier(d_x)
-                a_d_y = self.domain_classifier(c_x)
-                return a_d_y, a_c_y
+                d_y = self.domain_classifier_dg(d_x)
+            # Giving domain encoded features to category classifier (adversarial)
+            a_c_y = self.category_classifier(d_x)
+            # Giving category encoded features to domain classifier (adversarial)
+            a_d_y = self.domain_classifier(c_x)
+            return x, r_x, c_y, d_y, a_c_y, a_d_y, d_x
         else:
-            if alpha == None:
-                d_y = self.domain_classifier(d_x)
-                return d_y, x, r_x
-            else:
-                a_d_y = self.domain_classifier(c_x)
-                return a_d_y
-            
-
-        
-        #if target_label != None: #?????
-        #    c_y = self.category_classifier(c_x)
-        #else:
-        #    c_y = None
-        #d_y = self.domain_classifier(d_x)
-        ##adversarial
-        #a_c_y = self.category_classifier(d_x) #valori del domain encoder nel category classifier #?????
-        #a_d_y = self.domain_classifier(c_x) #valori del category encoder nel domain classifier
-        ## convolute the concatenated c_x and d_x
-        #fg = self.cv(torch.cat((c_x,d_x),0))
-        #r_x = self.reconstructor(fg)
-        #return x, c_y, d_y, r_x, a_c_y, a_d_y
-        ## ritorniamo le feature estratte e quelle ricostruite per calcolare la reconstruction loss ( x, r_x )
-        ## ritorniamo l'output dei classificatori per le altre loss function ( c_y, d_y )
-        ## ritorniamo l'output per l'adversarial search ( a_c_y, a_d_y )
+            c_y = self.category_classifier(c_x)
+            return c_y

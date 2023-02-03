@@ -52,6 +52,8 @@ At this point you should be able to run and edit the base code provided.
 | `--data_path` | points to the directory where the PACS dataset is stored. See above (Getting Started >>> Dataset) to properly setup this argument. |
 | `--cpu` | if set, the experiment will run on the CPU. |
 | `--test` | if set, the experiment will skip the training procedure and just run the evaluation on the test set. |
+| `--alpha` | weight for the adversarial part. |
+| `--dom_gen` | if set, the experiment will be performed with domain generalization. |
 
 ## Baseline Results (see point 1. of the project)
 |          | Art Painting &#8594; Cartoon | Art Painting &#8594; Sketch | Art Painting &#8594; Photo | Average |
